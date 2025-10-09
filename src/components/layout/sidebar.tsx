@@ -63,7 +63,7 @@ export default function AppSidebar() {
               isActive={isActive('/settings')}
               tooltip={{ children: 'Settings' }}
             >
-              <Link href="#">
+              <Link href="/settings">
                 <Settings />
                 <span>Settings</span>
               </Link>
