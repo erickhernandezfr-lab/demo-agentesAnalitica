@@ -15,6 +15,7 @@ import {
   FileJson,
   GanttChart,
   BrainCircuit,
+  RefreshCw,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -36,14 +37,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -64,7 +57,7 @@ type AnalysisHistoryTableProps = {
   analyses: Analysis[];
 };
 
-const statusIcons: Record<AnalysisStatus, React.ReactNode> = {
+const statusIcons: Record<AnalysisStatus, React.ReactElement> = {
   completed: <CheckCircle2 className="text-green-600" />,
   in_progress: <Loader className="animate-spin text-blue-600" />,
   pending: <CircleDot className="text-muted-foreground" />,
@@ -80,24 +73,7 @@ const statusColors: Record<AnalysisStatus, string> = {
   not_started: 'bg-gray-200 text-gray-500 dark:bg-gray-800/20 dark:text-gray-500',
 };
 
-const StatusCell = ({ status, label }: { status: AnalysisStatus; label: string }) => {
-  if (status === 'completed') {
-    return (
-      <Button variant="link" size="sm" className="h-auto p-0">
-        Ver resultado
-      </Button>
-    );
-  }
-
-  if (status === 'not_started' || status === 'failed') {
-    return (
-      <Button variant="outline" size="sm" className="h-8">
-        <Play className="mr-2 h-4 w-4" />
-        {label}
-      </Button>
-    );
-  }
-
+const StatusBadge = ({ status }: { status: AnalysisStatus }) => {
   return (
     <Badge variant="outline" className={cn('border-0 capitalize', statusColors[status])}>
       {React.cloneElement(statusIcons[status], { className: 'mr-1 h-3 w-3' })}
@@ -130,8 +106,8 @@ export function AnalysisHistoryTable({ analyses }: AnalysisHistoryTableProps) {
               <TableRow>
                 <TableHead>Website</TableHead>
                 <TableHead><Tooltip><TooltipTrigger>Scrapping</TooltipTrigger><TooltipContent>Website Scrapping</TooltipContent></Tooltip></TableHead>
-                <TableHead><Tooltip><TooltipTrigger>Análisis</TooltipTrigger><TooltipContent>Análisis para Taggeo</TooltipContent></Tooltip></TableHead>
-                <TableHead><Tooltip><TooltipTrigger>Guía</TooltipTrigger><TooltipContent>Generar Guía de Taggeo</TooltipContent></Tooltip></TableHead>
+                <TableHead><Tooltip><TooltipTrigger>Analysis</TooltipTrigger><TooltipContent>SEO Analysis</TooltipContent></Tooltip></TableHead>
+                <TableHead><Tooltip><TooltipTrigger>Guide</TooltipTrigger><TooltipContent>Tagging Guide Generation</TooltipContent></Tooltip></TableHead>
                 <TableHead>PDF</TableHead>
                 <TableHead className="hidden md:table-cell">SEO Score</TableHead>
                 <TableHead className="hidden lg:table-cell">Date</TableHead>
@@ -150,21 +126,21 @@ export function AnalysisHistoryTable({ analyses }: AnalysisHistoryTableProps) {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <StatusCell status={analysis.scrappingStatus} label="Scrapear" />
+                    <StatusBadge status={analysis.scrappingStatus} />
                   </TableCell>
                    <TableCell>
-                    <StatusCell status={analysis.analysisStatus} label="Analizar" />
+                    <StatusBadge status={analysis.analysisStatus} />
                   </TableCell>
                    <TableCell>
-                    <StatusCell status={analysis.guideStatus} label="Generar" />
+                    <StatusBadge status={analysis.guideStatus} />
                   </TableCell>
                   <TableCell>
                     {analysis.pdfStatus === 'completed' && analysis.guidePdfUrl ? (
                         <a href={analysis.guidePdfUrl} target="_blank" rel="noopener noreferrer" className={cn(buttonVariants({variant: 'link', size: 'sm'}), 'h-auto p-0')}>
-                            Ver PDF
+                            View PDF
                         </a>
                     ) : (
-                        <StatusCell status={analysis.pdfStatus} label="Crear PDF" />
+                        <StatusBadge status={analysis.pdfStatus} />
                     )}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
@@ -184,9 +160,7 @@ export function AnalysisHistoryTable({ analyses }: AnalysisHistoryTableProps) {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                         <DropdownMenuItem
-                          onSelect={() => handleViewScreenshots(analysis)}
-                        >
+                         <DropdownMenuItem>
                           <GanttChart className="mr-2 h-4 w-4" />
                           View Details
                         </DropdownMenuItem>
@@ -213,7 +187,11 @@ export function AnalysisHistoryTable({ analyses }: AnalysisHistoryTableProps) {
                           <FileDown className="mr-2 h-4 w-4" />
                           Download PDF
                         </DropdownMenuItem>
-                         <DropdownMenuSeparator />
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem>
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                          Re-run
+                        </DropdownMenuItem>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                              <DropdownMenuItem
