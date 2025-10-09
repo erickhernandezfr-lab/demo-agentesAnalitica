@@ -1,3 +1,46 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "screenshot-1",
+      "description": "Homepage screenshot of Multiplica",
+      "imageUrl": "https://picsum.photos/seed/101/1280/800",
+      "imageHint": "website homepage"
+    },
+    {
+      "id": "screenshot-2",
+      "description": "Services page screenshot of Multiplica",
+      "imageUrl": "https://picsum.photos/seed/102/1280/800",
+      "imageHint": "website services"
+    },
+    {
+      "id": "screenshot-3",
+      "description": "Contact page screenshot of Multiplica",
+      "imageUrl": "https://picsum.photos/seed/103/1280/800",
+      "imageHint": "website contact"
+    },
+    {
+      "id": "screenshot-4",
+      "description": "Homepage screenshot of Apple",
+      "imageUrl": "https://picsum.photos/seed/104/1280/800",
+      "imageHint": "website technology"
+    },
+    {
+      "id": "screenshot-5",
+      "description": "Homepage screenshot of GitHub",
+      "imageUrl": "https://picsum.photos/seed/105/1280/800",
+      "imageHint": "website code"
+    },
+    {
+      "id": "screenshot-6",
+      "description": "Repository page screenshot of GitHub",
+      "imageUrl": "https://picsum.photos/seed/106/1280/800",
+      "imageHint": "website repository"
+    },
+    {
+      "id": "avatar-1",
+      "description": "User avatar",
+      "imageUrl": "https://picsum.photos/seed/avatar1/40/40",
+      "imageHint": "person face"
+    }
+  ]
 }
