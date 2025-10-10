@@ -7,8 +7,8 @@ import AppSidebar from '@/components/layout/sidebar';
 import AppHeader from '@/components/layout/header';
 
 export const metadata: Metadata = {
-  title: 'SeoPilot',
-  description: 'Automated SEO tagging and optimization guides.',
+  title: 'Analytics Agent',
+  description: 'Automated analytics and optimization guides.',
 };
 
 export default function RootLayout({

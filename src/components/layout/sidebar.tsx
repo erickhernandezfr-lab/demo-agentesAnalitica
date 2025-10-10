@@ -40,7 +40,7 @@ export default function AppSidebar() {
       <SidebarHeader className="h-14 items-center justify-center">
         <Link href="/" className="flex items-center gap-2 font-bold">
             <Icons.Logo className="h-6 w-6 text-primary" />
-            <span className="font-headline group-data-[collapsible=icon]:hidden">SeoPilot</span>
+            <span className="font-headline group-data-[collapsible=icon]:hidden">Analytics Agent</span>
         </Link>
       </SidebarHeader>
       <SidebarContent className="flex-1">
