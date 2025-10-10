@@ -24,16 +24,23 @@ export async function startAnalysis(prevState: any, formData: FormData) {
 
   const { url, pages, device } = validatedFields.data;
 
-  // Fire-and-forget the Genkit flow
-  websiteScraping({
-    startUrl: url,
-    maxPages: pages,
-    useMobile: device === 'mobile',
-  }).catch(console.error);
+  try {
+    // Fire-and-forget the Genkit flow
+    await websiteScraping({
+      startUrl: url,
+      maxPages: pages,
+      useMobile: device === 'mobile',
+    });
 
-  console.log(`Scraping process initiated for: ${url}`);
+    console.log(`Scraping process initiated for: ${url}`);
 
-  return {
-    message: `Analysis started for ${url}. Progress will be updated in the dashboard.`,
-  };
+    return {
+      message: `Analysis started for ${url}. Progress will be updated in the dashboard.`,
+    };
+  } catch (error) {
+    console.error('Error during website scraping:', error);
+    return {
+      error: 'Error reaching server. Please try again.',
+    };
+  }
 }

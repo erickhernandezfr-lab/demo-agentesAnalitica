@@ -16,6 +16,13 @@ import {
   DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Loader2, PlusCircle } from 'lucide-react';
 import { startAnalysis } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -23,7 +30,6 @@ import {
   RadioGroup,
   RadioGroupItem,
 } from '@/components/ui/radio-group';
-import { Checkbox } from '../ui/checkbox';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -32,10 +38,10 @@ function SubmitButton() {
       {pending ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Starting...
+          Iniciando...
         </>
       ) : (
-        'Start Analysis'
+        'Iniciar Sesión'
       )}
     </Button>
   );
@@ -50,11 +56,17 @@ export function NewAnalysisDialog() {
   useEffect(() => {
     if (state?.message) {
       toast({
-        title: 'Success',
+        title: 'Éxito',
         description: state.message,
       });
       formRef.current?.reset();
       closeButtonRef.current?.click();
+    } else if (state?.error) {
+      toast({
+        title: 'Error',
+        description: state.error,
+        variant: 'destructive',
+      });
     }
   }, [state, toast]);
 
@@ -63,18 +75,35 @@ export function NewAnalysisDialog() {
       <DialogTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
-          New Analysis
+          Nueva Sesión MCP
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <form ref={formRef} action={formAction}>
           <DialogHeader>
-            <DialogTitle>New Website Analysis</DialogTitle>
+            <DialogTitle>Nueva Sesión MCP</DialogTitle>
             <DialogDescription>
-              Enter a URL to start the SEO tagging analysis.
+              Cada agente ejecuta un flujo MCP independiente.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="agent" className="text-right">
+                Agente
+              </Label>
+              <div className="col-span-3">
+                <Select name="agent" defaultValue="assessment">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar Agente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="assessment">Assessment y Mejoras</SelectItem>
+                    <SelectItem value="monitoring">Monitoreo de Rendimiento</SelectItem>
+                    <SelectItem value="audit">Auditoría & Recalibración</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="url" className="text-right">
                 URL
@@ -96,7 +125,7 @@ export function NewAnalysisDialog() {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="pages" className="text-right">
-                Pages
+                Páginas
               </Label>
               <div className="col-span-3">
                 <Input
@@ -111,7 +140,7 @@ export function NewAnalysisDialog() {
               </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">Device</Label>
+              <Label className="text-right">Dispositivo</Label>
               <div className="col-span-3">
                 <RadioGroup name="device" defaultValue="desktop" className="flex gap-4">
                   <div className="flex items-center space-x-2">
@@ -129,7 +158,7 @@ export function NewAnalysisDialog() {
           <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="secondary" ref={closeButtonRef}>
-                Cancel
+                Cancelar
               </Button>
             </DialogClose>
             <SubmitButton />
