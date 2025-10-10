@@ -13,9 +13,9 @@ export type Analysis = {
   status: AnalysisStatus; // Overall status
   scrappingStatus: AnalysisStatus;
   analysisStatus: AnalysisStatus;
-  guideStatus: AnalysisStatus;
+  reportStatus: AnalysisStatus;
   pdfStatus: AnalysisStatus;
   recommendations: string[];
   screenshots: string[]; // array of image placeholder IDs
-  guidePdfUrl: string | null;
+  reportPdfUrl: string | null;
 };

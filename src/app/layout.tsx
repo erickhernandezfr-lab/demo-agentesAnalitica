@@ -8,7 +8,7 @@ import AppHeader from '@/components/layout/header';
 
 export const metadata: Metadata = {
   title: 'Analytics Agent',
-  description: 'Automated analytics and optimization guides.',
+  description: 'Automated analytics and optimization reports.',
 };
 
 export default function RootLayout({

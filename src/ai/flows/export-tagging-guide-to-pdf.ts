@@ -1,45 +1,45 @@
 'use server';
 
 /**
- * @fileOverview This file defines a Genkit flow to export a tagging guide to a visually appealing PDF document with company branding.
+ * @fileOverview This file defines a Genkit flow to export a report to a visually appealing PDF document with company branding.
  *
- * - exportTaggingGuideToPdf - A function that handles the export tagging guide to PDF process.
- * - ExportTaggingGuideToPdfInput - The input type for the exportTaggingGuideToPdf function.
- * - ExportTaggingGuideToPdfOutput - The return type for the exportTaggingGuideToPdf function.
+ * - exportReportToPdf - A function that handles the export report to PDF process.
+ * - ExportReportToPdfInput - The input type for the exportReportToPdf function.
+ * - ExportReportToPdfOutput - The return type for the exportReportToPdf function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const ExportTaggingGuideToPdfInputSchema = z.object({
-  guideId: z.string().describe('The ID of the tagging guide to export.'),
+const ExportReportToPdfInputSchema = z.object({
+  reportId: z.string().describe('The ID of the report to export.'),
 });
 
-export type ExportTaggingGuideToPdfInput = z.infer<
-  typeof ExportTaggingGuideToPdfInputSchema
+export type ExportReportToPdfInput = z.infer<
+  typeof ExportReportToPdfInputSchema
 >;
 
-const ExportTaggingGuideToPdfOutputSchema = z.object({
+const ExportReportToPdfOutputSchema = z.object({
   pdfUrl: z.string().describe('The URL of the generated PDF file in Cloud Storage.'),
 });
 
-export type ExportTaggingGuideToPdfOutput = z.infer<
-  typeof ExportTaggingGuideToPdfOutputSchema
+export type ExportReportToPdfOutput = z.infer<
+  typeof ExportReportToPdfOutputSchema
 >;
 
-export async function exportTaggingGuideToPdf(
-  input: ExportTaggingGuideToPdfInput
-): Promise<ExportTaggingGuideToPdfOutput> {
-  return exportTaggingGuideToPdfFlow(input);
+export async function exportReportToPdf(
+  input: ExportReportToPdfInput
+): Promise<ExportReportToPdfOutput> {
+  return exportReportToPdfFlow(input);
 }
 
 const prompt = ai.definePrompt({
-  name: 'exportTaggingGuideToPdfPrompt',
-  input: {schema: ExportTaggingGuideToPdfInputSchema},
-  output: {schema: ExportTaggingGuideToPdfOutputSchema},
+  name: 'exportReportToPdfPrompt',
+  input: {schema: ExportReportToPdfInputSchema},
+  output: {schema: ExportReportToPdfOutputSchema},
   prompt: `You are an expert at generating visually appealing PDF documents from structured data.
 
-  Your task is to take the tagging guide identified by guideId: {{{guideId}}} and export it to a PDF document.
+  Your task is to take the tagging report identified by reportId: {{{reportId}}} and export it to a PDF document.
   The PDF should include company branding (logo, colors), clear sections, and a professional layout.
   The PDF will be stored in Google Cloud Storage.
   Return the URL of the PDF in the "pdfUrl" field.
@@ -59,11 +59,11 @@ const prompt = ai.definePrompt({
   `,
 });
 
-const exportTaggingGuideToPdfFlow = ai.defineFlow(
+const exportReportToPdfFlow = ai.defineFlow(
   {
-    name: 'exportTaggingGuideToPdfFlow',
-    inputSchema: ExportTaggingGuideToPdfInputSchema,
-    outputSchema: ExportTaggingGuideToPdfOutputSchema,
+    name: 'exportReportToPdfFlow',
+    inputSchema: ExportReportToPdfInputSchema,
+    outputSchema: ExportReportToPdfOutputSchema,
   },
   async input => {
     // Call PDF Generator Agent here

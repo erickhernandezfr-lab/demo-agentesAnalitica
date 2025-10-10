@@ -140,8 +140,8 @@ export function AnalysisHistoryTable({ analyses }: AnalysisHistoryTableProps) {
                 </TableHead>
                 <TableHead>
                   <Tooltip>
-                    <TooltipTrigger>Guide</TooltipTrigger>
-                    <TooltipContent>Tagging Guide Generation</TooltipContent>
+                    <TooltipTrigger>Report</TooltipTrigger>
+                    <TooltipContent>Tagging Report Generation</TooltipContent>
                   </Tooltip>
                 </TableHead>
                 <TableHead>PDF</TableHead>
@@ -169,13 +169,13 @@ export function AnalysisHistoryTable({ analyses }: AnalysisHistoryTableProps) {
                     <StatusBadge status={analysis.analysisStatus} />
                   </TableCell>
                   <TableCell>
-                    <StatusBadge status={analysis.guideStatus} />
+                    <StatusBadge status={analysis.reportStatus} />
                   </TableCell>
                   <TableCell>
                     {analysis.pdfStatus === 'completed' &&
-                    analysis.guidePdfUrl ? (
+                    analysis.reportPdfUrl ? (
                       <a
-                        href={analysis.guidePdfUrl}
+                        href={analysis.reportPdfUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className={cn(
@@ -224,9 +224,9 @@ export function AnalysisHistoryTable({ analyses }: AnalysisHistoryTableProps) {
                         </DropdownMenuItem>
                         <DropdownMenuItem>
                           <FileText className="mr-2 h-4 w-4" />
-                          View Guide
+                          View Report
                         </DropdownMenuItem>
-                        <DropdownMenuItem disabled={!analysis.guidePdfUrl}>
+                        <DropdownMenuItem disabled={!analysis.reportPdfUrl}>
                           <FileDown className="mr-2 h-4 w-4" />
                           Download PDF
                         </DropdownMenuItem>
