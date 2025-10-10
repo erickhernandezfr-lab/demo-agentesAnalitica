@@ -1,14 +1,19 @@
 'use server';
 
 import { z } from 'zod';
+import { websiteScraping } from '@/ai/flows/website-scraping';
 
 const analysisSchema = z.object({
   url: z.string().url({ message: 'Please enter a valid URL.' }),
+  pages: z.coerce.number().min(1).max(10),
+  device: z.enum(['desktop', 'mobile']),
 });
 
 export async function startAnalysis(prevState: any, formData: FormData) {
   const validatedFields = analysisSchema.safeParse({
     url: formData.get('url'),
+    pages: formData.get('pages'),
+    device: formData.get('device'),
   });
 
   if (!validatedFields.success) {
@@ -17,16 +22,18 @@ export async function startAnalysis(prevState: any, formData: FormData) {
     };
   }
 
-  const url = validatedFields.data.url;
+  const { url, pages, device } = validatedFields.data;
 
-  // In a real application, you would trigger the Genkit flows here.
-  // e.g., await scrapingAgent({ url, ... });
-  console.log(`Starting analysis for: ${url}`);
-  
-  // Simulate a delay for the analysis process
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  // Fire-and-forget the Genkit flow
+  websiteScraping({
+    startUrl: url,
+    maxPages: pages,
+    useMobile: device === 'mobile',
+  }).catch(console.error);
+
+  console.log(`Scraping process initiated for: ${url}`);
 
   return {
-    message: `Analysis started for ${url}`,
+    message: `Analysis started for ${url}. Progress will be updated in the dashboard.`,
   };
 }

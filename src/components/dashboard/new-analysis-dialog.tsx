@@ -19,6 +19,11 @@ import {
 import { Loader2, PlusCircle } from 'lucide-react';
 import { startAnalysis } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
+import {
+  RadioGroup,
+  RadioGroupItem,
+} from '@/components/ui/radio-group';
+import { Checkbox } from '../ui/checkbox';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -61,7 +66,7 @@ export function NewAnalysisDialog() {
           New Analysis
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md">
         <form ref={formRef} action={formAction}>
           <DialogHeader>
             <DialogTitle>New Website Analysis</DialogTitle>
@@ -79,13 +84,45 @@ export function NewAnalysisDialog() {
                   id="url"
                   name="url"
                   placeholder="https://example.com"
-                  className="col-span-3"
                   required
                   type="url"
                 />
                 {state?.errors?.url && (
-                  <p className="pt-1 text-xs text-red-500">{state.errors.url[0]}</p>
+                  <p className="pt-1 text-xs text-red-500">
+                    {state.errors.url[0]}
+                  </p>
                 )}
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="pages" className="text-right">
+                Pages
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="pages"
+                  name="pages"
+                  type="number"
+                  defaultValue="1"
+                  min="1"
+                  max="10"
+                  required
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Device</Label>
+              <div className="col-span-3">
+                <RadioGroup name="device" defaultValue="desktop" className="flex gap-4">
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="desktop" id="desktop" />
+                    <Label htmlFor="desktop">Desktop</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="mobile" id="mobile" />
+                    <Label htmlFor="mobile">Mobile</Label>
+                  </div>
+                </RadioGroup>
               </div>
             </div>
           </div>
