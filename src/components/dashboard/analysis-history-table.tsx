@@ -145,9 +145,6 @@ export function AnalysisHistoryTable({ analyses }: AnalysisHistoryTableProps) {
                   </Tooltip>
                 </TableHead>
                 <TableHead>PDF</TableHead>
-                <TableHead className="hidden md:table-cell">
-                  SEO Score
-                </TableHead>
                 <TableHead className="hidden lg:table-cell">Date</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
@@ -191,11 +188,6 @@ export function AnalysisHistoryTable({ analyses }: AnalysisHistoryTableProps) {
                     ) : (
                       <StatusBadge status={analysis.pdfStatus} />
                     )}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {analysis.seoScore !== null
-                      ? `${analysis.seoScore}/100`
-                      : 'N/A'}
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">
                     {format(new Date(analysis.createdAt), 'MMM d, yyyy')}

@@ -15,7 +15,6 @@ export type Analysis = {
   analysisStatus: AnalysisStatus;
   guideStatus: AnalysisStatus;
   pdfStatus: AnalysisStatus;
-  seoScore: number | null;
   recommendations: string[];
   screenshots: string[]; // array of image placeholder IDs
   guidePdfUrl: string | null;

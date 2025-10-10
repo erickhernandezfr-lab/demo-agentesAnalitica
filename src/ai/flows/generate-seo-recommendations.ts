@@ -20,7 +20,6 @@ export type GenerateSeoRecommendationsInput = z.infer<
 >;
 
 const GenerateSeoRecommendationsOutputSchema = z.object({
-  seo_score: z.number().describe('The SEO score of the website (0-100).'),
   recommendations: z.array(
     z.string().describe('A list of specific SEO improvements.')
   ),
@@ -42,13 +41,13 @@ const prompt = ai.definePrompt({
   output: {schema: GenerateSeoRecommendationsOutputSchema},
   prompt: `You are an SEO expert analyzing a website's scraped data to provide recommendations for improvement.
 
-  Analyze the following scraped data and provide an SEO score (0-100) and a list of specific recommendations to improve the website's search engine ranking.
+  Analyze the following scraped data and provide a list of specific recommendations to improve the website's search engine ranking.
 
   Scraped Data:
   {{scrapedData}}
 
   Ensure the recommendations are actionable and specific.
-  Provide the response as JSON in the following format: {seo_score: number, recommendations: string[]}
+  Provide the response as JSON in the following format: {recommendations: string[]}
 
   Consider the following aspects during the analysis:
   - Tagging consistency
