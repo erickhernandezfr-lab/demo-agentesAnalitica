@@ -11,7 +11,7 @@ import { z } from 'zod';
 // Note: Playwright, fs, and other heavy dependencies are imported within the flow
 // to avoid loading them on every server start.
 
-export const WebsiteScrapingInputSchema = z.object({
+const WebsiteScrapingInputSchema = z.object({
   startUrl: z.string().url().describe('The initial URL to start scraping from.'),
   maxPages: z.number().min(1).max(10).default(1).describe('The maximum number of pages to scrape.'),
   useMobile: z.boolean().default(false).describe('Whether to use a mobile viewport for scraping.'),
@@ -54,10 +54,9 @@ Rules:
 - "nombre" should be a concise snake_case identifier (e.g., main_hero, article_card, pricing_table).
 `.trim();
 
-
-export const websiteScraping = ai.defineFlow(
+const websiteScrapingFlow = ai.defineFlow(
   {
-    name: 'websiteScraping',
+    name: 'websiteScrapingFlow',
     inputSchema: WebsiteScrapingInputSchema,
     outputSchema: z.void(), // This flow will run in the background and update Firestore directly.
   },
@@ -96,3 +95,8 @@ export const websiteScraping = ai.defineFlow(
     // });
   }
 );
+
+
+export async function websiteScraping(input: WebsiteScrapingInput) {
+    return await websiteScrapingFlow(input);
+}
