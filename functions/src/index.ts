@@ -7,24 +7,53 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
+import {onRequest} from "firebase-functions/v2/https";
+import * as logger from "firebase-functions/logger";
 import {setGlobalOptions} from "firebase-functions";
+import {v4 as uuidv4} from "uuid";
+import {Firestore, FieldValue} from "@google-cloud/firestore";
+import axios from "axios";
+import cors from "cors";
 
-// Start writing functions
-// https://firebase.google.com/docs/functions/typescript
+const corsHandler = cors({origin: true});
 
-// For cost control, you can set the maximum number of containers that can be
-// running at the same time. This helps mitigate the impact of unexpected
-// traffic spikes by instead downgrading performance. This limit is a
-// per-function limit. You can override the limit for each function using the
-// `maxInstances` option in the function's options, e.g.
-// `onRequest({ maxInstances: 5 }, (req, res) => { ... })`.
-// NOTE: setGlobalOptions does not apply to functions using the v1 API. V1
-// functions should each use functions.runWith({ maxInstances: 10 }) instead.
-// In the v1 API, each function can only serve one request per container, so
-// this will be the maximum concurrent request count.
+const firestore = new Firestore();
+
 setGlobalOptions({maxInstances: 10});
 
-// export const helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+export const startAnalysisJob = onRequest(async (request, response) => {
+  corsHandler(request, response, async () => {
+    try {
+      const {url, pages, device, agentType} = request.body;
+
+      if (!url || !pages || !device || !agentType) {
+        response.status(400).send("Missing required parameters.");
+        return;
+      }
+
+      const jobId = uuidv4();
+
+      await firestore.collection("jobs").doc(jobId).set({
+        status: "pending",
+        url: url,
+        createdAt: FieldValue.serverTimestamp(),
+        agentType: agentType,
+      });
+
+      // Do not await this call
+      axios.post("https://scraper-service-896195877995.us-central1.run.app/scrape", {
+        url,
+        pages,
+        device,
+        jobId,
+      });
+
+      response.status(200).send({jobId});
+    } catch (error) {
+      logger.error("Error starting analysis job:", error);
+      response.status(500).send("Internal Server Error");
+    }
+  });
+});
+
+export * from "./mcpProxy";

@@ -1,21 +1,19 @@
-
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+} from "@/components/ui/sheet";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 interface McpResultsPanelProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  jsonData: object;
-  aiExplanation: string;
+  result: any; // The full result object from the MCP server
 }
 
-export function McpResultsPanel({ open, onOpenChange, jsonData, aiExplanation }: McpResultsPanelProps) {
+export function McpResultsPanel({ open, onOpenChange, result }: McpResultsPanelProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:w-3/4 md:w-1/2 lg:w-1/3">
@@ -26,22 +24,26 @@ export function McpResultsPanel({ open, onOpenChange, jsonData, aiExplanation }:
           </SheetDescription>
         </SheetHeader>
         <div className="py-4 space-y-4">
-          <Accordion type="single" collapsible defaultValue="item-1">
-            <AccordionItem value="item-1">
+          <Accordion type="single" collapsible defaultValue="raw">
+            <AccordionItem value="raw">
               <AccordionTrigger>JSON Raw Output</AccordionTrigger>
               <AccordionContent>
                 <pre className="bg-muted p-2 rounded-lg mt-2 h-60 overflow-y-auto text-xs">
-                  {JSON.stringify(jsonData, null, 2)}
+                  {JSON.stringify(result, null, 2)}
                 </pre>
               </AccordionContent>
             </AccordionItem>
+            <AccordionItem value="summary">
+              <AccordionTrigger>Explicación IA</AccordionTrigger>
+              <AccordionContent>
+                <div className="bg-muted p-2 rounded-lg mt-2">
+                  <p className="text-sm">
+                    {result?.summary || result?.recomendaciones || "Sin explicación disponible"}
+                  </p>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
           </Accordion>
-          <div>
-            <h4 className="font-semibold">Explicación IA</h4>
-            <div className="bg-muted p-2 rounded-lg mt-2">
-              <p className="text-sm">{aiExplanation}</p>
-            </div>
-          </div>
         </div>
       </SheetContent>
     </Sheet>

@@ -1,55 +1,47 @@
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-
-export type ToolStatus = 'Idle' | 'Running' | 'Completed' | 'Failed' | 'Pending' | 'Not Started';
+import { runMcpTool } from "@/lib/mcpClient";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface McpToolCardProps {
-  toolName: string;
-  status: ToolStatus;
-  lastRun?: string;
-  onActionClick: () => void;
-  actionText: string;
-  disabled: boolean;
-  children?: React.ReactNode;
+  sessionId: string;
+  tool: "GeminiAnalisis" | "GuiaTaggeo";
+  onResult?: (result: any) => void;
 }
 
-const statusVariant: Record<ToolStatus, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-    'Idle': 'secondary',
-    'Running': 'default',
-    'Completed': 'default',
-    'Failed': 'destructive',
-    'Pending': 'outline',
-    'Not Started': 'outline',
-};
+export function McpToolCard({ sessionId, tool, onResult }: McpToolCardProps) {
+  const [loading, setLoading] = useState(false);
 
+  const label = tool === "GeminiAnalisis" ? "Generar análisis" : "Generar guía";
 
-export function McpToolCard({
-  toolName,
-  status,
-  lastRun,
-  onActionClick,
-  actionText,
-  disabled,
-  children,
-}: McpToolCardProps) {
+  async function handleRun() {
+    setLoading(true);
+    try {
+      const result = await runMcpTool({
+        sessionId,
+        tool: tool,
+      });
+      if (onResult) {
+        onResult(result);
+      }
+    } catch (e) {
+      if (onResult) {
+        onResult({ error: (e as Error).message });
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <Card>
+    <Card className="p-4 space-y-3">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">{toolName}</CardTitle>
-          <Badge variant={statusVariant[status]}>{status}</Badge>
-        </div>
-        {lastRun && (
-          <CardDescription>Last run: {lastRun}</CardDescription>
-        )}
+        <CardTitle className="text-lg">{tool === "GeminiAnalisis" ? "Análisis (Gemini)" : "Guía de Taggeo"}</CardTitle>
       </CardHeader>
       <CardContent>
-        {children}
-        <div className="flex justify-end mt-4">
-          <Button onClick={onActionClick} size="sm" disabled={disabled}>{actionText}</Button>
-        </div>
+        <Button disabled={loading} onClick={handleRun}>
+          {loading ? "Procesando…" : label}
+        </Button>
       </CardContent>
     </Card>
   );

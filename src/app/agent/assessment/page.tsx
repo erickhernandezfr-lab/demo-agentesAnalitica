@@ -16,25 +16,21 @@ import { McpResultsPanel } from '@/components/dashboard/mcp-results-panel';
 import { McpGuidePanel } from '@/components/dashboard/mcp-guide-panel';
 import { useMcpSession } from '@/lib/hooks/use-mcp-session';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
 
 export default function Page() {
   const { session, isPending, startSession } = useMcpSession('assessment');
   const [activePanel, setActivePanel] = useState<string | null>(null);
-  const { toast } = useToast();
+  const [geminiAnalysisResult, setGeminiAnalysisResult] = useState<any>(null);
+  const [taggingGuideResult, setTaggingGuideResult] = useState<any>(null);
 
-  const handlePdfDownload = () => {
-    // This is a mock function. In a real application, you would generate a PDF.
-    const a = document.createElement('a');
-    a.href = '/Mock_GuiaTaggeo.pdf';
-    a.download = 'Mock_GuiaTaggeo.pdf';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    toast({
-      title: 'Descarga Completa',
-      description: 'El documento ha sido generado correctamente.',
-    });
+  const handleGeminiAnalysisResult = (result: any) => {
+    setGeminiAnalysisResult(result);
+    setActivePanel('results');
+  };
+
+  const handleTaggingGuideResult = (result: any) => {
+    setTaggingGuideResult(result);
+    setActivePanel('guide');
   };
 
   return (
@@ -46,15 +42,15 @@ export default function Page() {
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbPage>Assessment y Mejoras</BreadcrumbPage>
+            <BreadcrumbPage>Entendimiento y tagging</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
       
       <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold">Agente MCP: Assessment y Mejoras</h1>
-            <p className="text-muted-foreground">Ejecuta y visualiza herramientas MCP para evaluar la estructura, SEO y UX de tu sitio.</p>
+            <h1 className="text-2xl font-semibold">Agente MCP: Entendimiento y tagging</h1>
+            <p className="text-muted-foreground">Scrappea + Analiza + Propuesta de taggeo </p>
           </div>
            <div className="flex items-center gap-2">
                 <span className="relative flex h-2 w-2">
@@ -76,34 +72,20 @@ export default function Page() {
                     <CardTitle>Estado del Flujo MCP</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <McpToolCard
-                        toolName="🕷️ Scrapping"
-                        status={session?.tools?.scrapping || 'Not Started'}
-                        actionText="Ver Logs"
-                        onActionClick={() => setActivePanel('logs')}
-                        disabled={!session}
-                    />
-                    <McpToolCard
-                        toolName="🧠 Análisis (Gemini)"
-                        status={session?.tools?.analisis || 'Not Started'}
-                        actionText="Ver Resultados"
-                        onActionClick={() => setActivePanel('results')}
-                        disabled={!session}
-                    />
-                    <McpToolCard
-                        toolName="🧭 Guía de Taggeo"
-                        status={session?.tools?.guia || 'Not Started'}
-                        actionText="Generar"
-                        onActionClick={() => setActivePanel('guide')}
-                        disabled={!session}
-                    />
-                    <McpToolCard
-                        toolName="📄 Generación de PDF"
-                        status={session?.tools?.pdf || 'Not Started'}
-                        actionText="Descargar"
-                        onActionClick={handlePdfDownload}
-                        disabled={!session}
-                    />
+                    {session && (
+                      <McpToolCard
+                          sessionId={session.id}
+                          tool="GeminiAnalisis"
+                          onResult={handleGeminiAnalysisResult}
+                      />
+                    )}
+                    {session && (
+                      <McpToolCard
+                          sessionId={session.id}
+                          tool="GuiaTaggeo"
+                          onResult={handleTaggingGuideResult}
+                      />
+                    )}
                 </CardContent>
             </Card>
         </div>
@@ -120,13 +102,12 @@ export default function Page() {
             <McpResultsPanel
                 open={activePanel === 'results'}
                 onOpenChange={(open) => !open && setActivePanel(null)}
-                jsonData={session.results?.jsonData || {}}
-                aiExplanation={session.results?.recommendations.join('\n') || ''}
+                result={geminiAnalysisResult}
             />
             <McpGuidePanel
                 open={activePanel === 'guide'}
                 onOpenChange={(open) => !open && setActivePanel(null)}
-                guide="Aquí se mostrará la guía de taggeo generada."
+                result={taggingGuideResult}
             />
         </>
       )}
