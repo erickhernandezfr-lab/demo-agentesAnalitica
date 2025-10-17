@@ -1,11 +1,3 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * import {onCall} from "firebase-functions/v2/https";
- * import {onDocumentWritten} from "firebase-functions/v2/firestore";
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
 
 import {onCall, HttpsError} from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
@@ -18,6 +10,7 @@ import {Storage} from "@google-cloud/storage";
 import {marked} from "marked";
 import { generateTaggingReport } from "../../src/ai/flows/generate-tagging-report";
 import * as admin from "firebase-admin";
+import DOMPurify from 'dompurify';
 
 admin.initializeApp();
 const firestore = admin.firestore();
@@ -25,8 +18,17 @@ const storage = new Storage();
 
 setGlobalOptions({maxInstances: 10});
 
+// Helper to check for authenticated user
+const ensureAuthenticated = (context: any) => {
+  if (!context.auth) {
+    throw new HttpsError("unauthenticated", "The function must be called while authenticated.");
+  }
+};
+
+
 export const startInsightForge = onCall(async (request) => {
   try {
+    ensureAuthenticated(request);
     const {url, pages, device, agentType} = request.data;
     logger.info(`Received startInsightForge request with agentType: ${agentType}`);
 
@@ -34,14 +36,21 @@ export const startInsightForge = onCall(async (request) => {
       logger.error("Missing required parameters.", { data: request.data });
       throw new HttpsError("invalid-argument", "Missing required parameters.");
     }
+    
+    const parsedPages = parseInt(pages, 10);
+    if (isNaN(parsedPages) || parsedPages <= 0 || parsedPages > 20) { // Limit pages to 20
+      throw new HttpsError('invalid-argument', '"pages" must be a number between 1 and 20.');
+    }
 
     const jobId = uuidv4();
+    const userId = request.auth.uid;
 
     await firestore.collection("jobs").doc(jobId).set({
       status: "insight_forge_pending",
       url: url,
       createdAt: FieldValue.serverTimestamp(),
       agentType: agentType,
+      userId: userId, // Store the user ID
     });
     
     const isProduction = process.env.NODE_ENV === 'production';
@@ -89,18 +98,20 @@ export const startInsightForge = onCall(async (request) => {
 
 export const startAnalyticCore = onCall(async (request) => {
     try {
+        ensureAuthenticated(request);
         const { jobId } = request.data;
         if (!jobId) {
             throw new HttpsError("invalid-argument", "Missing required parameter: jobId");
         }
 
         const jobDocRef = firestore.collection("jobs").doc(jobId);
-        await jobDocRef.update({ status: "analytic_core_pending" });
-
         const jobDoc = await jobDocRef.get();
-        if (!jobDoc.exists) {
-            throw new HttpsError("not-found", "Job not found.");
+
+        if (!jobDoc.exists || jobDoc.data()?.userId !== request.auth.uid) {
+          throw new HttpsError('permission-denied', 'You do not have permission to access this job.');
         }
+
+        await jobDocRef.update({ status: "analytic_core_pending" });
 
         const jobData = jobDoc.data();
         const jsonPath = jobData?.insightForgeOutput?.jsonPath;
@@ -149,6 +160,7 @@ export const startAnalyticCore = onCall(async (request) => {
 
 
 export const startTagOpsHub = onCall(async (request) => {
+    ensureAuthenticated(request);
     const {jobId, modifiedMarkdown} = request.data;
 
     if (!modifiedMarkdown || !jobId) {
@@ -156,6 +168,11 @@ export const startTagOpsHub = onCall(async (request) => {
     }
     
     const jobDocRef = firestore.collection("jobs").doc(jobId);
+    const jobDoc = await jobDocRef.get();
+    
+    if (!jobDoc.exists || jobDoc.data()?.userId !== request.auth.uid) {
+      throw new HttpsError('permission-denied', 'You do not have permission to access this job.');
+    }
 
     const bucketName = process.env.GCS_BUCKET;
     if (!bucketName) {
@@ -174,6 +191,7 @@ export const startTagOpsHub = onCall(async (request) => {
       const page = await browser.newPage();
 
       const htmlContent = marked(modifiedMarkdown);
+      const sanitizedHtml = DOMPurify.sanitize(htmlContent);
 
       const finalHtml = `
         <html>
@@ -186,7 +204,7 @@ export const startTagOpsHub = onCall(async (request) => {
             </style>
           </head>
           <body>
-            ${htmlContent}
+            ${sanitizedHtml}
           </body>
         </html>
       `;
@@ -225,3 +243,4 @@ export const startTagOpsHub = onCall(async (request) => {
       throw new HttpsError("internal", "Failed to generate PDF.");
     }
 });
+
