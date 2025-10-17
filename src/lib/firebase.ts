@@ -17,7 +17,9 @@ const functions = getFunctions(app, 'us-central1');
 
 if (process.env.NODE_ENV === 'development') {
     console.log("Development mode: Connecting to emulators");
+    // Connect to the Firestore emulator
     connectFirestoreEmulator(firestore, '127.0.0.1', 8080);
+    // Connect to the Functions emulator
     connectFunctionsEmulator(functions, '127.0.0.1', 5001);
 }
 
