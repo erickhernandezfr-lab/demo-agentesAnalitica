@@ -29,7 +29,7 @@ import {
 } from '@/components/ui/radio-group';
 
 interface NewAnalysisDialogProps {
-  setJobId: Dispatch<SetStateAction<string | null>>;
+  setJobId: (jobId: string) => void;
 }
 
 export function NewAnalysisDialog({ setJobId }: NewAnalysisDialogProps) {
@@ -88,15 +88,15 @@ export function NewAnalysisDialog({ setJobId }: NewAnalysisDialogProps) {
       <DialogTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
-          New MCP Session
+          New Analysis
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>New MCP Session</DialogTitle>
+            <DialogTitle>New Analysis</DialogTitle>
             <DialogDescription>
-              Each agent runs an independent MCP flow.
+              Each agent runs an independent flow.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">

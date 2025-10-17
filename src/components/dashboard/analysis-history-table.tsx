@@ -2,19 +2,11 @@
 
 import * as React from 'react';
 import {
-  FileDown,
   MoreHorizontal,
-  Eye,
   Trash2,
-  AlertCircle,
   CheckCircle2,
   Loader,
-  CircleDot,
-  FileText,
-  FileJson,
-  GanttChart,
-  BrainCircuit,
-  RefreshCw,
+  AlertCircle,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -47,15 +39,9 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
-import type { Analysis, AnalysisStatus } from '@/lib/types';
+import type { Job, JobStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { ScreenshotViewer } from './screenshot-viewer';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+
 import {
   Table,
   TableBody,
@@ -65,56 +51,68 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ClientOnly } from '@/components/ui/client-only';
+import { useCollection } from 'react-firebase-hooks/firestore';
+import { collection, query, orderBy, getFirestore } from 'firebase/firestore';
+import { app } from '@/lib/firebase';
+import Link from 'next/link';
 
-type AnalysisHistoryTableProps = {
-  analyses: Analysis[];
-};
-
-const statusIcons: Record<AnalysisStatus, React.ReactElement> = {
-  completed: <CheckCircle2 className="text-green-600" />,
-  in_progress: <Loader className="animate-spin text-blue-600" />,
-  pending: <CircleDot className="text-muted-foreground" />,
+const statusIcons: Record<JobStatus, React.ReactElement> = {
+  insight_forge_pending: <Loader className="animate-spin text-blue-600" />,
+  insight_forge_completed: <CheckCircle2 className="text-green-600" />,
+  analytic_core_pending: <Loader className="animate-spin text-blue-600" />,
+  analytic_core_completed: <CheckCircle2 className="text-green-600" />,
+  tagops_hub_pending: <Loader className="animate-spin text-blue-600" />,
+  tagops_hub_completed: <CheckCircle2 className="text-green-600" />,
   failed: <AlertCircle className="text-destructive" />,
-  not_started: <CircleDot className="text-gray-400" />,
 };
 
-const statusColors: Record<AnalysisStatus, string> = {
-  completed:
-    'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400',
-  in_progress:
-    'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400',
+const statusColors: Record<string, string> = {
   pending:
     'bg-gray-100 text-gray-800 dark:bg-gray-700/40 dark:text-gray-400',
+  completed:
+    'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400',
   failed: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400',
-  not_started:
-    'bg-gray-200 text-gray-500 dark:bg-gray-800/20 dark:text-gray-500',
 };
 
-const StatusBadge = ({ status }: { status: AnalysisStatus }) => {
+const getStatusDisplay = (status: JobStatus) => {
+    const parts = status.split('_');
+    const stage = parts.slice(0, -1).join(' ');
+    const state = parts[parts.length - 1];
+    
+    let colorClass = '';
+    if (state === 'pending') colorClass = statusColors.pending;
+    if (state === 'completed') colorClass = statusColors.completed;
+    if (status === 'failed') colorClass = statusColors.failed;
+
+    return {
+        text: status.replace(/_/g, ' '),
+        colorClass,
+        icon: statusIcons[status] || <AlertCircle className="text-gray-400" />
+    };
+}
+
+
+const StatusBadge = ({ status }: { status: JobStatus }) => {
+  const { text, colorClass, icon } = getStatusDisplay(status);
   return (
     <Badge
       variant="outline"
-      className={cn('border-0 capitalize', statusColors[status])}
+      className={cn('border-0 capitalize', colorClass)}
     >
-      {React.cloneElement(statusIcons[status], { className: 'mr-1 h-3 w-3' })}
-      {status.replace('_', ' ')}
+      {React.cloneElement(icon, { className: 'mr-1 h-3 w-3' })}
+      {text}
     </Badge>
   );
 };
 
-export function AnalysisHistoryTable({ analyses }: AnalysisHistoryTableProps) {
-  const [selectedAnalysis, setSelectedAnalysis] =
-    React.useState<Analysis | null>(null);
-  const [isScreenshotViewerOpen, setScreenshotViewerOpen] =
-    React.useState(false);
+export function AnalysisHistoryTable() {
+  const [snapshot, loading, error] = useCollection(
+    query(collection(getFirestore(app), 'jobs'), orderBy('createdAt', 'desc'))
+  );
 
-  const handleViewScreenshots = (analysis: Analysis) => {
-    setSelectedAnalysis(analysis);
-    setScreenshotViewerOpen(true);
-  };
+  const analyses = snapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job & {id: string})) || [];
 
   return (
-    <TooltipProvider>
       <Card>
         <CardHeader>
           <CardTitle>Analysis History</CardTitle>
@@ -127,25 +125,7 @@ export function AnalysisHistoryTable({ analyses }: AnalysisHistoryTableProps) {
             <TableHeader>
               <TableRow>
                 <TableHead>Website</TableHead>
-                <TableHead>
-                  <Tooltip>
-                    <TooltipTrigger>Scrapping</TooltipTrigger>
-                    <TooltipContent>Website Scrapping</TooltipContent>
-                  </Tooltip>
-                </TableHead>
-                <TableHead>
-                  <Tooltip>
-                    <TooltipTrigger>Analysis</TooltipTrigger>
-                    <TooltipContent>SEO Analysis</TooltipContent>
-                  </Tooltip>
-                </TableHead>
-                <TableHead>
-                  <Tooltip>
-                    <TooltipTrigger>Report</TooltipTrigger>
-                    <TooltipContent>Tagging Report Generation</TooltipContent>
-                  </Tooltip>
-                </TableHead>
-                <TableHead>PDF</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead className="hidden lg:table-cell">Date</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
@@ -153,7 +133,21 @@ export function AnalysisHistoryTable({ analyses }: AnalysisHistoryTableProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {analyses.map(analysis => (
+              {loading && (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center">
+                    Loading history...
+                  </TableCell>
+                </TableRow>
+              )}
+              {error && (
+                 <TableRow>
+                  <TableCell colSpan={4} className="text-center text-destructive">
+                    Error loading history: {error.message}
+                  </TableCell>
+                </TableRow>
+              )}
+              {!loading && analyses.map(analysis => (
                 <TableRow key={analysis.id}>
                   <TableCell>
                     <div className="font-medium">
@@ -164,118 +158,18 @@ export function AnalysisHistoryTable({ analyses }: AnalysisHistoryTableProps) {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <StatusBadge status={analysis.scrappingStatus} />
+                    <StatusBadge status={analysis.status} />
                   </TableCell>
-                  <TableCell>
-                    <StatusBadge status={analysis.analysisStatus} />
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge status={analysis.reportStatus} />
-                  </TableCell>
-                  <TableCell>
-                    {analysis.pdfStatus === 'completed' &&
-                    analysis.reportPdfUrl ? (
-                      <a
-                        href={analysis.reportPdfUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={cn(
-                          buttonVariants({ variant: 'link', size: 'sm' }),
-                          'h-auto p-0'
-                        )}
-                      >
-                        View PDF
-                      </a>
-                    ) : (
-                      <StatusBadge status={analysis.pdfStatus} />
-                    )}
-                  </TableCell>
+                 
                   <TableCell className="hidden lg:table-cell">
                     <ClientOnly>
-                      {format(new Date(analysis.createdAt), 'MMM d, yyyy')}
+                      {analysis.createdAt ? format(analysis.createdAt.toDate(), 'MMM d, yyyy') : 'N/A'}
                     </ClientOnly>
                   </TableCell>
                   <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                          <GanttChart className="mr-2 h-4 w-4" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          disabled={analysis.screenshots.length === 0}
-                          onSelect={() => handleViewScreenshots(analysis)}
-                        >
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Screenshots
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <FileJson className="mr-2 h-4 w-4" />
-                          View Scrap JSON
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <BrainCircuit className="mr-2 h-4 w-4" />
-                          View Analysis
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <FileText className="mr-2 h-4 w-4" />
-                          View Report
-                        </DropdownMenuItem>
-                        <DropdownMenuItem disabled={!analysis.reportPdfUrl}>
-                          <FileDown className="mr-2 h-4 w-4" />
-                          Download PDF
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                          <RefreshCw className="mr-2 h-4 w-4" />
-                          Re-run
-                        </DropdownMenuItem>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <DropdownMenuItem
-                              onSelect={e => e.preventDefault()}
-                              className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                Are you sure?
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This action cannot be undone. This will
-                                permanently delete the analysis for{' '}
-                                <span className="font-medium">
-                                  {analysis.url}
-                                </span>
-                                .
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                className={cn(
-                                  buttonVariants({ variant: 'destructive' })
-                                )}
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                     <Link href={`/dashboard/jobs/${analysis.id}`} className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}>
+                        View Details
+                    </Link>
                   </TableCell>
                 </TableRow>
               ))}
@@ -283,13 +177,5 @@ export function AnalysisHistoryTable({ analyses }: AnalysisHistoryTableProps) {
           </Table>
         </CardContent>
       </Card>
-      {selectedAnalysis && (
-        <ScreenshotViewer
-          isOpen={isScreenshotViewerOpen}
-          onOpenChange={setScreenshotViewerOpen}
-          analysis={selectedAnalysis}
-        />
-      )}
-    </TooltipProvider>
   );
 }

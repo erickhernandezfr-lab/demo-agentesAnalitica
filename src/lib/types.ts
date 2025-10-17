@@ -1,36 +1,34 @@
-export type AnalysisStatus =
-  | 'pending'
-  | 'in_progress'
-  | 'scraping_completed'
-  | 'analysis_completed'
-  | 'report_completed'
-  | 'generating_pdf'
-  | 'completed'
-  | 'failed'
-  | 'not_started';
+// src/lib/types.ts
+import type { Timestamp } from 'firebase/firestore';
 
-export type Analysis = {
-  id: string;
-  url: string;
-  createdAt: string;
-  completedAt: string | null;
-  status: AnalysisStatus; // Overall status
-  scrappingStatus: AnalysisStatus;
-  analysisStatus: AnalysisStatus;
-  reportStatus: AnalysisStatus;
-  pdfStatus: AnalysisStatus;
-  recommendations: string[];
-  screenshots: string[]; // array of image placeholder IDs
-  reportPdfUrl: string | null;
-};
+export type JobStatus = 
+  | 'insight_forge_pending' 
+  | 'insight_forge_completed' 
+  | 'analytic_core_pending' 
+  | 'analytic_core_completed' 
+  | 'tagops_hub_pending' 
+  | 'tagops_hub_completed' 
+  | 'failed';
 
-// Interface for the Firestore 'jobs' collection document
+
 export interface Job {
-  jobId: string;
-  agentType: string;
+  status: JobStatus;
   url: string;
-  status: AnalysisStatus;
-  createdAt: any; // Firestore Timestamp
-  pdfUrl?: string;
+  createdAt: Timestamp;
+  agentType: string;
   error?: string;
+
+  // Etapa 1: Insight Forge (Scraping)
+  insightForgeOutput?: {
+    jsonPath: string;      // Ruta en GCS al all_pages.json
+    imagesBasePath: string; // Ruta base a la carpeta de imágenes: jobs/{jobId}/input/
+  };
+
+  // Etapa 2: Analytic Core (Análisis de IA)
+  analyticCoreDraft?: string; // Borrador en Markdown del análisis, editable por el usuario.
+
+  // Etapa 3: TagOps Hub (Reporte PDF)
+  tagOpsHubOutput?: {
+    pdfUrl: string;
+  };
 }

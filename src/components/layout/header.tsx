@@ -7,7 +7,7 @@ import { SidebarTrigger } from '../ui/sidebar';
 import { NewAnalysisDialog } from '@/components/dashboard/new-analysis-dialog';
 
 interface HeaderProps {
-  setJobId: Dispatch<SetStateAction<string | null>>;
+  setJobId: (jobId: string) => void;
 }
 
 export function Header({ setJobId }: HeaderProps) {

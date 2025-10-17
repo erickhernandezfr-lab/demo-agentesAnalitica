@@ -1,17 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getFunctions, httpsCallable } from "firebase/functions";
-import { app } from '@/lib/firebase'; // This should be the server-side initialized app if available, or a client-side one for this case.
 
-// This is a workaround because the functions SDK is primarily client-side.
-// In a real-world scenario, you might use the Firebase Admin SDK here if this was a full backend,
-// or call the function via a direct HTTP request.
-// For simplicity, we use the client SDK which might need careful environment handling.
-
-// Note: Directly calling a Cloud Function via HTTP from a serverless function (like this API route)
-// is often a better pattern as it avoids client SDK complexities on the backend.
-// We'll simulate a secure call here.
-
+// This API route acts as a secure intermediary to the Google Cloud Function.
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -21,21 +11,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Missing required parameters' }, { status: 400 });
     }
 
-    // This assumes you have a way to get an auth token if your function is protected.
-    // For a public function (allowUnauthenticated), you can call it directly.
-    const functionUrl = process.env.START_ANALYSIS_FUNCTION_URL;
+    // The Cloud Function URL should be an environment variable.
+    // Ensure this is set in your Vercel/deployment environment.
+    const functionUrl = process.env.START_INSIGHT_FORGE_URL;
 
     if (!functionUrl) {
-      console.error("START_ANALYSIS_FUNCTION_URL environment variable not set.");
+      console.error("START_INSIGHT_FORGE_URL environment variable not set.");
       return NextResponse.json({ message: 'Server configuration error: Function URL not set.' }, { status: 500 });
     }
 
+    // We forward the request to the `startInsightForge` Cloud Function.
     const response = await fetch(functionUrl, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             // If your function is protected, you'd add an Authorization header here.
-            // 'Authorization': `Bearer ${authToken}`
         },
         body: JSON.stringify({ url, pages, device, agentType }),
     });
@@ -48,10 +38,12 @@ export async function POST(req: NextRequest) {
 
     const data = await response.json();
     
+    // The Cloud Function returns the jobId, which we pass back to the client.
     return NextResponse.json(data, { status: 200 });
 
   } catch (error) {
     console.error('API route error:', error);
-    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return NextResponse.json({ message: 'Internal Server Error', error: errorMessage }, { status: 500 });
   }
 }
