@@ -1,8 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
-import { useEffect, useRef } from 'react';
+import { Dispatch, SetStateAction, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -24,82 +22,91 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Loader2, PlusCircle } from 'lucide-react';
-import { startAnalysis } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import {
   RadioGroup,
   RadioGroupItem,
 } from '@/components/ui/radio-group';
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending}>
-      {pending ? (
-        <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Iniciando...
-        </>
-      ) : (
-        'Iniciar Sesión'
-      )}
-    </Button>
-  );
+interface NewAnalysisDialogProps {
+  setJobId: Dispatch<SetStateAction<string | null>>;
 }
 
-export function NewAnalysisDialog() {
-  const [state, formAction] = useActionState(startAnalysis, null);
+export function NewAnalysisDialog({ setJobId }: NewAnalysisDialogProps) {
   const { toast } = useToast();
-  const formRef = useRef<HTMLFormElement>(null);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (state?.message) {
-      toast({
-        title: 'Éxito',
-        description: state.message,
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setLoading(true);
+
+    const formData = new FormData(event.currentTarget);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+      const response = await fetch('/api/startAnalysisJob', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
       });
-      formRef.current?.reset();
-      closeButtonRef.current?.click();
-    } else if (state?.error) {
+
+      if (!response.ok) {
+        throw new Error('Failed to start analysis job');
+      }
+
+      const { jobId } = await response.json();
+      setJobId(jobId);
+
+      toast({
+        title: 'Success',
+        description: 'Analysis job started successfully',
+      });
+
+      // Optionally close the dialog
+      // (requires a ref to the close button)
+    } catch (error) {
       toast({
         title: 'Error',
-        description: state.error,
+        description: (error as Error).message,
         variant: 'destructive',
       });
+    } finally {
+      setLoading(false);
     }
-  }, [state, toast]);
+  };
 
   return (
     <Dialog>
       <DialogTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
-          Nueva Sesión MCP
+          New MCP Session
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
-        <form ref={formRef} action={formAction}>
+        <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Nueva Sesión MCP</DialogTitle>
+            <DialogTitle>New MCP Session</DialogTitle>
             <DialogDescription>
-              Cada agente ejecuta un flujo MCP independiente.
+              Each agent runs an independent MCP flow.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="agent" className="text-right">
-                Agente
+                Agent
               </Label>
               <div className="col-span-3">
                 <Select name="agent" defaultValue="assessment">
                   <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar Agente" />
+                    <SelectValue placeholder="Select Agent" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="assessment">Assessment y Mejoras</SelectItem>
-                    <SelectItem value="monitoring">Monitoreo de Rendimiento</SelectItem>
-                    <SelectItem value="audit">Auditoría & Recalibración</SelectItem>
+                    <SelectItem value="assessment">Assessment & Improvements</SelectItem>
+                    <SelectItem value="monitoring">Performance Monitoring</SelectItem>
+                    <SelectItem value="audit">Audit & Recalibration</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -116,16 +123,11 @@ export function NewAnalysisDialog() {
                   required
                   type="url"
                 />
-                {state?.errors?.url && (
-                  <p className="pt-1 text-xs text-red-500">
-                    {state.errors.url[0]}
-                  </p>
-                )}
               </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="pages" className="text-right">
-                Páginas
+                Pages
               </Label>
               <div className="col-span-3">
                 <Input
@@ -140,7 +142,7 @@ export function NewAnalysisDialog() {
               </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">Dispositivo</Label>
+              <Label className="text-right">Device</Label>
               <div className="col-span-3">
                 <RadioGroup name="device" defaultValue="desktop" className="flex gap-4">
                   <div className="flex items-center space-x-2">
@@ -157,11 +159,20 @@ export function NewAnalysisDialog() {
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button type="button" variant="secondary" ref={closeButtonRef}>
-                Cancelar
+              <Button type="button" variant="secondary">
+                Cancel
               </Button>
             </DialogClose>
-            <SubmitButton />
+            <Button type="submit" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Starting...
+                </>
+              ) : (
+                'Start Session'
+              )}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

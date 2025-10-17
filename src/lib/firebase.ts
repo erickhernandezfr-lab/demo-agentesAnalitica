@@ -1,5 +1,6 @@
 import { initializeApp, getApp, getApps } from "firebase/app";
 import { getFunctions } from "firebase/functions";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
@@ -12,13 +13,15 @@ const firebaseConfig = {
 
 let app;
 let functions;
+let firestore;
 
 if (typeof window !== "undefined") {
   app = getApps().length ? getApp() : initializeApp(firebaseConfig);
   functions = getFunctions(app, "us-central1");
+  firestore = getFirestore(app);
 } else {
   console.warn("Firebase SDK is intended for client-side use and will not be initialized on the server.");
 }
 
 
-export { app, functions };
+export { app, functions, firestore };

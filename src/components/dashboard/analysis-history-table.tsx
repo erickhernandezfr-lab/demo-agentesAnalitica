@@ -64,6 +64,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { ClientOnly } from '@/components/ui/client-only';
 
 type AnalysisHistoryTableProps = {
   analyses: Analysis[];
@@ -190,7 +191,9 @@ export function AnalysisHistoryTable({ analyses }: AnalysisHistoryTableProps) {
                     )}
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">
-                    {format(new Date(analysis.createdAt), 'MMM d, yyyy')}
+                    <ClientOnly>
+                      {format(new Date(analysis.createdAt), 'MMM d, yyyy')}
+                    </ClientOnly>
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>

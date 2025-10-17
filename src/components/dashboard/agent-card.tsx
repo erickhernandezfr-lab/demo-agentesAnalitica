@@ -32,9 +32,9 @@ export function AgentCard({ title, description, status, kpi, ctaText, ctaLink, i
             <Badge variant={status === 'Active' ? 'default' : 'outline'}>{status}</Badge>
             <p className="text-sm text-muted-foreground mt-2">{kpi}</p>
           </div>
-          <Link href={ctaLink} legacyBehavior passHref>
+          <Link href={ctaLink}>
             <Button asChild>
-              <a>{ctaText}</a>
+              {ctaText}
             </Button>
           </Link>
         </div>

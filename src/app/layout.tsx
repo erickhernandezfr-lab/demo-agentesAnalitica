@@ -3,8 +3,6 @@ import './globals.css';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toaster';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import AppSidebar from '@/components/layout/sidebar';
-import AppHeader from '@/components/layout/header';
 import '@/lib/firebase'; // This line ensures Firebase is initialized
 
 export const metadata: Metadata = {
@@ -38,9 +36,7 @@ export default function RootLayout({
       >
         <SidebarProvider>
           <div className="flex">
-            <AppSidebar />
             <div className="flex flex-1 flex-col">
-              <AppHeader />
               <main className="flex-1">
                 {children}
               </main>
