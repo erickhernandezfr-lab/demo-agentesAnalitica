@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { doc, getFirestore } from 'firebase/firestore';
 import { useDocumentData } from 'react-firebase-hooks/firestore';
-import { app } from '@/lib/firebase';
+import { app, functions } from '@/lib/firebase';
 import type { Job } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { httpsCallable } from 'firebase/functions';
 
 export default function JobDetailPage() {
   const params = useParams();
@@ -36,34 +37,22 @@ export default function JobDetailPage() {
 
   const handleStageAction = async (stage: 'analyticCore' | 'tagOpsHub') => {
     setIsSubmitting(true);
-    let endpoint = '';
+    let callableFunction;
     let body: any = { jobId };
 
     if (stage === 'analyticCore') {
-        endpoint = process.env.NEXT_PUBLIC_START_ANALYTIC_CORE_URL || '';
+        callableFunction = httpsCallable(functions, 'startAnalyticCore');
     } else if (stage === 'tagOpsHub') {
-        endpoint = process.env.NEXT_PUBLIC_START_TAGOPS_HUB_URL || '';
+        callableFunction = httpsCallable(functions, 'startTagOpsHub');
         body.modifiedMarkdown = modifiedMarkdown;
-    }
-    
-    if (!endpoint) {
-        toast({ title: 'Error', description: 'Function URL is not configured.', variant: 'destructive' });
+    } else {
+        toast({ title: 'Error', description: 'Invalid stage.', variant: 'destructive' });
         setIsSubmitting(false);
         return;
     }
 
     try {
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || `Failed to start ${stage}`);
-        }
-
+        await callableFunction(body);
         toast({ title: 'Success', description: `${stage} process started successfully.` });
     } catch (err) {
         const errorMessage = (err instanceof Error) ? err.message : 'An unknown error occurred.';

@@ -7,139 +7,135 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-import {onRequest} from "firebase-functions/v2/https";
+import {onCall, HttpsError} from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import {setGlobalOptions} from "firebase-functions";
 import {v4 as uuidv4} from "uuid";
 import {FieldValue} from "@google-cloud/firestore";
 import axios from "axios";
-import cors from "cors";
 import puppeteer from "puppeteer";
 import {Storage} from "@google-cloud/storage";
 import {marked} from "marked";
 import { generateTaggingReport } from "../../src/ai/flows/generate-tagging-report";
 import * as admin from "firebase-admin";
 
-const corsHandler = cors({origin: true});
-
 admin.initializeApp();
 const firestore = admin.firestore();
 const storage = new Storage();
 
-
 setGlobalOptions({maxInstances: 10});
 
-export const startInsightForge = onRequest(async (request, response) => {
-  corsHandler(request, response, async () => {
-    try {
-      const {url, pages, device, agentType} = request.body;
-      
-      logger.info(`Received startInsightForge request with agentType: ${agentType}`);
+export const startInsightForge = onCall(async (request) => {
+  try {
+    const {url, pages, device, agentType} = request.data;
+    logger.info(`Received startInsightForge request with agentType: ${agentType}`);
 
-      if (!url || !pages || !device || !agentType) {
-        logger.error("Missing required parameters.", { body: request.body });
-        response.status(400).send("Missing required parameters.");
-        return;
-      }
-
-      const jobId = uuidv4();
-
-      await firestore.collection("jobs").doc(jobId).set({
-        status: "insight_forge_pending",
-        url: url,
-        createdAt: FieldValue.serverTimestamp(),
-        agentType: agentType,
-      });
-
-      const scraperServiceUrl = process.env.SCRAPER_SERVICE_URL;
-      if (!scraperServiceUrl) {
-        logger.error("SCRAPER_SERVICE_URL environment variable not set.");
-        response.status(500).send("Server configuration error.");
-        return;
-      }
-
-      axios.post(scraperServiceUrl, {
-        url,
-        pages,
-        device,
-        jobId,
-      });
-
-      response.status(200).send({jobId});
-    } catch (error) {
-      logger.error("Error starting Insight Forge job:", error);
-      response.status(500).send("Internal Server Error");
+    if (!url || !pages || !device || !agentType) {
+      logger.error("Missing required parameters.", { data: request.data });
+      throw new HttpsError("invalid-argument", "Missing required parameters.");
     }
-  });
-});
 
-export const startAnalyticCore = onRequest(async (request, response) => {
-    corsHandler(request, response, async () => {
-        try {
-            const { jobId } = request.body;
-            if (!jobId) {
-                response.status(400).send("Missing required parameter: jobId");
-                return;
-            }
+    const jobId = uuidv4();
 
-            const jobDocRef = firestore.collection("jobs").doc(jobId);
-            await jobDocRef.update({ status: "analytic_core_pending" });
-
-            const jobDoc = await jobDocRef.get();
-            if (!jobDoc.exists) {
-                response.status(404).send("Job not found.");
-                return;
-            }
-
-            const jobData = jobDoc.data();
-            const jsonPath = jobData?.insightForgeOutput?.jsonPath;
-
-            if (!jsonPath) {
-                await jobDocRef.update({ status: "failed", error: "Scraping output (jsonPath) not found." });
-                response.status(400).send("Scraping output not found for this job.");
-                return;
-            }
-
-            const scrapJsonContent = { placeholder: `Data from ${jsonPath}` }; 
-
-            const reportOutput = await generateTaggingReport({
-                seoReport: { placeholder: "SEO report would be generated here" }, 
-                scrapJson: scrapJsonContent,
-            });
-
-            await jobDocRef.update({
-                status: "analytic_core_completed",
-                analyticCoreDraft: reportOutput.report,
-            });
-
-            response.status(200).send({ message: "Analytic Core completed successfully." });
-
-        } catch (error) {
-            const { jobId } = request.body;
-            logger.error(`Error in startAnalyticCore for job ${jobId}:`, error);
-            if (jobId) {
-                 try {
-                    await firestore.collection("jobs").doc(jobId).update({
-                        status: "failed",
-                        error: "Analytic Core process failed.",
-                    });
-                } catch (firestoreError) {
-                    logger.error(`Failed to update Firestore for job ${jobId} after Analytic Core error:`, firestoreError);
-                }
-            }
-            response.status(500).send("Internal Server Error");
-        }
+    await firestore.collection("jobs").doc(jobId).set({
+      status: "insight_forge_pending",
+      url: url,
+      createdAt: FieldValue.serverTimestamp(),
+      agentType: agentType,
     });
+
+    const scraperServiceUrl = process.env.SCRAPER_SERVICE_URL;
+    if (!scraperServiceUrl) {
+        logger.error("SCRAPER_SERVICE_URL environment variable not set.");
+        // Attempt to construct a default emulator URL for local development
+        const localScraperUrl = `http://127.0.0.1:8081/scrape`;
+        logger.warn(`Trying to fall back to local scraper URL: ${localScraperUrl}`);
+        axios.post(localScraperUrl, {
+            url, pages, device, jobId,
+        });
+    } else {
+         axios.post(scraperServiceUrl, {
+            url, pages, device, jobId,
+        });
+    }
+
+
+    return {jobId};
+  } catch (error) {
+    logger.error("Error starting Insight Forge job:", error);
+    if (error instanceof HttpsError) {
+        throw error;
+    }
+    throw new HttpsError("internal", "Internal Server Error");
+  }
+});
+
+export const startAnalyticCore = onCall(async (request) => {
+    try {
+        const { jobId } = request.data;
+        if (!jobId) {
+            throw new HttpsError("invalid-argument", "Missing required parameter: jobId");
+        }
+
+        const jobDocRef = firestore.collection("jobs").doc(jobId);
+        await jobDocRef.update({ status: "analytic_core_pending" });
+
+        const jobDoc = await jobDocRef.get();
+        if (!jobDoc.exists) {
+            throw new HttpsError("not-found", "Job not found.");
+        }
+
+        const jobData = jobDoc.data();
+        const jsonPath = jobData?.insightForgeOutput?.jsonPath;
+
+        if (!jsonPath) {
+            await jobDocRef.update({ status: "failed", error: "Scraping output (jsonPath) not found." });
+            throw new HttpsError("failed-precondition", "Scraping output not found for this job.");
+        }
+        
+        // This part needs a real implementation to fetch GCS content. Placeholder for now.
+        // const scrapJsonContent = await readGcsFile(jsonPath); 
+        const scrapJsonContent = { placeholder: `Data from ${jsonPath}` }; 
+
+
+        const reportOutput = await generateTaggingReport({
+            seoReport: { placeholder: "SEO report would be generated here" },
+            scrapJson: scrapJsonContent,
+        });
+
+        await jobDocRef.update({
+            status: "analytic_core_completed",
+            analyticCoreDraft: reportOutput.report,
+        });
+
+        return { message: "Analytic Core completed successfully." };
+
+    } catch (error) {
+        const { jobId } = request.data;
+        logger.error(`Error in startAnalyticCore for job ${jobId}:`, error);
+        if (jobId && !(error instanceof HttpsError)) {
+             try {
+                await firestore.collection("jobs").doc(jobId).update({
+                    status: "failed",
+                    error: "Analytic Core process failed.",
+                });
+            } catch (firestoreError) {
+                logger.error(`Failed to update Firestore for job ${jobId} after Analytic Core error:`, firestoreError);
+            }
+        }
+        if (error instanceof HttpsError) {
+            throw error;
+        }
+        throw new HttpsError("internal", "Internal Server Error");
+    }
 });
 
 
-export const startTagOpsHub = onRequest(async (request, response) => {
-  corsHandler(request, response, async () => {
-    const {jobId, modifiedMarkdown} = request.body;
+export const startTagOpsHub = onCall(async (request) => {
+    const {jobId, modifiedMarkdown} = request.data;
 
     if (!modifiedMarkdown || !jobId) {
-      response.status(400).send("Missing required parameters: modifiedMarkdown, jobId");
-      return;
+      throw new HttpsError("invalid-argument", "Missing required parameters: modifiedMarkdown, jobId");
     }
     
     const jobDocRef = firestore.collection("jobs").doc(jobId);
@@ -147,8 +143,7 @@ export const startTagOpsHub = onRequest(async (request, response) => {
     const bucketName = process.env.GCS_BUCKET;
     if (!bucketName) {
       logger.error("GCS_BUCKET environment variable not set.");
-      response.status(500).send("Server configuration error.");
-      return;
+      throw new HttpsError("internal", "Server configuration error.");
     }
 
     const bucket = storage.bucket(bucketName);
@@ -199,7 +194,7 @@ export const startTagOpsHub = onRequest(async (request, response) => {
         tagOpsHubOutput: tagOpsHubOutput,
       });
 
-      response.status(200).send({pdfUrl});
+      return {pdfUrl};
     } catch (error) {
       logger.error(`Error in TagOps Hub (PDF Generation) for job ${jobId}:`, error);
       try {
@@ -210,7 +205,6 @@ export const startTagOpsHub = onRequest(async (request, response) => {
       } catch (firestoreError) {
         logger.error(`Failed to update Firestore for job ${jobId} after PDF error:`, firestoreError);
       }
-      response.status(500).send("Failed to generate PDF.");
+      throw new HttpsError("internal", "Failed to generate PDF.");
     }
-  });
 });

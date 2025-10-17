@@ -28,6 +28,8 @@ import {
   RadioGroupItem,
 } from '@/components/ui/radio-group';
 import { useRouter } from 'next/navigation';
+import { functions } from '@/lib/firebase';
+import { httpsCallable, HttpsCallableResult } from 'firebase/functions';
 
 export function NewAnalysisDialog() {
   const { toast } = useToast();
@@ -46,35 +48,11 @@ export function NewAnalysisDialog() {
         pages: formData.get('pages'),
         device: formData.get('device'),
     };
-
-    const functionUrl = process.env.NEXT_PUBLIC_START_INSIGHT_FORGE_URL;
-
-    if (!functionUrl) {
-      toast({
-        title: 'Error de Configuración',
-        description: 'La URL de la función de inicio no está configurada.',
-        variant: 'destructive',
-      });
-      setLoading(false);
-      return;
-    }
-
-
+    
     try {
-      const response = await fetch(functionUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Failed to start analysis job' }));
-        throw new Error(errorData.message || 'Failed to start analysis job');
-      }
-
-      const { jobId } = await response.json();
+      const startInsightForge = httpsCallable(functions, 'startInsightForge');
+      const result: HttpsCallableResult<any> = await startInsightForge(data);
+      const { jobId } = result.data;
       
       toast({
         title: 'Success',
@@ -84,10 +62,11 @@ export function NewAnalysisDialog() {
       setIsDialogOpen(false); 
       router.push(`/dashboard/jobs/${jobId}`);
 
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Firebase Callable Error:", error);
       toast({
         title: 'Error',
-        description: (error as Error).message,
+        description: error.message || 'An unknown error occurred.',
         variant: 'destructive',
       });
     } finally {
