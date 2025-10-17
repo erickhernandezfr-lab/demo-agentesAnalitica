@@ -43,30 +43,47 @@ export const startInsightForge = onCall(async (request) => {
       createdAt: FieldValue.serverTimestamp(),
       agentType: agentType,
     });
+    
+    const isProduction = process.env.NODE_ENV === 'production';
+    let scraperServiceUrl = process.env.SCRAPER_SERVICE_URL; // For local override
 
-    const scraperServiceUrl = process.env.SCRAPER_SERVICE_URL;
-    if (!scraperServiceUrl) {
-        logger.error("SCRAPER_SERVICE_URL environment variable not set.");
-        // Attempt to construct a default emulator URL for local development
-        const localScraperUrl = `http://127.0.0.1:8081/scrape`;
-        logger.warn(`Trying to fall back to local scraper URL: ${localScraperUrl}`);
-        axios.post(localScraperUrl, {
+    if (isProduction && !scraperServiceUrl) {
+        // In production, dynamically get the URL of the deployed scraper-service
+        const {GoogleAuth} = require('google-auth-library');
+        const auth = new GoogleAuth();
+        const client = await auth.getIdTokenClient('https://scraper-service-upr76m4xma-uc.a.run.app'); // Audience must be the URL of the deployed service
+        const res = await client.request({url: 'https://scraper-service-upr76m4xma-uc.a.run.app/scrape'});
+        
+        // This is a placeholder as we don't need to call it again, just get the URL.
+        // We will call with axios with the token.
+        scraperServiceUrl = 'https://scraper-service-upr76m4xma-uc.a.run.app/scrape'; 
+        
+        logger.info(`Authenticating with identity token for ${scraperServiceUrl}.`);
+        const idToken = await client.getRequestHeaders(scraperServiceUrl);
+
+        axios.post(scraperServiceUrl, {
             url, pages, device, jobId,
+        }, {
+            headers: idToken
         });
     } else {
-         axios.post(scraperServiceUrl, {
+        // Use local emulator URL or explicitly set URL
+        if (!scraperServiceUrl) {
+            scraperServiceUrl = `http://127.0.0.1:8081/scrape`;
+            logger.warn(`SCRAPER_SERVICE_URL not set, falling back to local emulator: ${scraperServiceUrl}`);
+        }
+        axios.post(scraperServiceUrl, {
             url, pages, device, jobId,
         });
     }
 
-
     return {jobId};
-  } catch (error) {
+  } catch (error: any) {
     logger.error("Error starting Insight Forge job:", error);
     if (error instanceof HttpsError) {
         throw error;
     }
-    throw new HttpsError("internal", "Internal Server Error");
+    throw new HttpsError("internal", error.message || "Internal Server Error");
   }
 });
 
