@@ -3,13 +3,22 @@ import { initializeApp, getApp, getApps, FirebaseApp } from "firebase/app";
 import { getFunctions, connectFunctionsEmulator, Functions } from "firebase/functions";
 import { getFirestore, connectFirestoreEmulator, Firestore } from "firebase/firestore";
 
+// Helper function to throw a clear error for missing environment variables.
+function getRequiredEnv(key: string): string {
+  const value = process.env[key];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${key}`);
+  }
+  return value;
+}
+
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
+  apiKey: getRequiredEnv('NEXT_PUBLIC_FIREBASE_API_KEY'),
+  authDomain: getRequiredEnv('NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN'),
+  projectId: getRequiredEnv('NEXT_PUBLIC_FIREBASE_PROJECT_ID'),
+  storageBucket: getRequiredEnv('NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET'),
+  messagingSenderId: getRequiredEnv('NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'),
+  appId: getRequiredEnv('NEXT_PUBLIC_FIREBASE_APP_ID'),
 };
 
 // Singleton pattern to prevent multiple initializations
@@ -21,9 +30,6 @@ const functions: Functions = getFunctions(app, 'us-central1');
 if (process.env.NODE_ENV === 'development') {
     console.log("Development mode: Connecting to emulators");
     try {
-        // Check if emulators are already running to avoid re-connecting on HMR
-        // The _emulatorOrigin property is an internal detail, but useful here.
-        // A more public way is not readily available in the SDK.
         if (!(firestore as any)._emulatorOrigin) {
             connectFirestoreEmulator(firestore, 'localhost', 8080);
         }
