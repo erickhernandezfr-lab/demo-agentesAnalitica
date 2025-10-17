@@ -12,25 +12,24 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
 };
 
-let app: FirebaseApp;
-let firestore: Firestore;
-let functions: Functions;
+// Singleton pattern to prevent multiple initializations
+const app: FirebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// This prevents Firebase from being initialized more than once
-if (getApps().length === 0) {
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApp();
-}
-
-firestore = getFirestore(app);
-functions = getFunctions(app, 'us-central1');
+const firestore: Firestore = getFirestore(app);
+const functions: Functions = getFunctions(app, 'us-central1');
 
 if (process.env.NODE_ENV === 'development') {
     console.log("Development mode: Connecting to emulators");
     try {
-        connectFirestoreEmulator(firestore, 'localhost', 8080);
-        connectFunctionsEmulator(functions, 'localhost', 5001);
+        // Check if emulators are already running to avoid re-connecting on HMR
+        // The _emulatorOrigin property is an internal detail, but useful here.
+        // A more public way is not readily available in the SDK.
+        if (!(firestore as any)._emulatorOrigin) {
+            connectFirestoreEmulator(firestore, 'localhost', 8080);
+        }
+        if (!(functions as any)._emulatorOrigin) {
+            connectFunctionsEmulator(functions, 'localhost', 5001);
+        }
     } catch (e) {
         console.error("Error connecting to emulators. Have you started them with 'firebase emulators:start'?", e);
     }
