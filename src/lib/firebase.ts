@@ -1,6 +1,6 @@
-import { initializeApp, getApp, getApps } from "firebase/app";
-import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
-import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import { initializeApp, getApp, getApps, FirebaseApp } from "firebase/app";
+import { getFunctions, connectFunctionsEmulator, Functions } from "firebase/functions";
+import { getFirestore, connectFirestoreEmulator, Firestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
@@ -11,17 +11,23 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
 };
 
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-const firestore = getFirestore(app);
-const functions = getFunctions(app, 'us-central1');
+let app: FirebaseApp;
+let firestore: Firestore;
+let functions: Functions;
+
+if (getApps().length === 0) {
+  app = initializeApp(firebaseConfig);
+} else {
+  app = getApp();
+}
+
+firestore = getFirestore(app);
+functions = getFunctions(app, 'us-central1');
 
 if (process.env.NODE_ENV === 'development') {
     console.log("Development mode: Connecting to emulators");
-    // Connect to the Firestore emulator
-    connectFirestoreEmulator(firestore, '127.0.0.1', 8080);
-    // Connect to the Functions emulator
-    connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+    connectFirestoreEmulator(firestore, 'localhost', 8080);
+    connectFunctionsEmulator(functions, 'localhost', 5001);
 }
-
 
 export { app, firestore, functions };
