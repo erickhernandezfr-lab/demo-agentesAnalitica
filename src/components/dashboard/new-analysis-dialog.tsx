@@ -27,13 +27,15 @@ import {
   RadioGroup,
   RadioGroupItem,
 } from '@/components/ui/radio-group';
+import { useRouter } from 'next/navigation';
 
 interface NewAnalysisDialogProps {
-  setJobId: (jobId: string) => void;
+  // This prop is no longer needed as we'll use the router
 }
 
-export function NewAnalysisDialog({ setJobId }: NewAnalysisDialogProps) {
+export function NewAnalysisDialog({}: NewAnalysisDialogProps) {
   const { toast } = useToast();
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -43,13 +45,14 @@ export function NewAnalysisDialog({ setJobId }: NewAnalysisDialogProps) {
 
     const formData = new FormData(event.currentTarget);
     const data = {
-        agentType: formData.get('agent'),
+        agentType: formData.get('agentType'),
         url: formData.get('url'),
         pages: formData.get('pages'),
         device: formData.get('device'),
     };
 
     try {
+      // The Next.js API route will call the actual Cloud Function
       const response = await fetch('/api/startAnalysisJob', {
         method: 'POST',
         headers: {
@@ -64,14 +67,15 @@ export function NewAnalysisDialog({ setJobId }: NewAnalysisDialogProps) {
       }
 
       const { jobId } = await response.json();
-      setJobId(jobId);
-
+      
       toast({
         title: 'Success',
-        description: 'Analysis job started successfully. You can now track its progress.',
+        description: 'Analysis job started. Redirecting to job details...',
       });
 
-      setIsDialogOpen(false); // Close the dialog on success
+      setIsDialogOpen(false); 
+      router.push(`/dashboard/jobs/${jobId}`);
+
     } catch (error) {
       toast({
         title: 'Error',
