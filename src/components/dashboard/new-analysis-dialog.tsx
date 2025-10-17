@@ -94,9 +94,9 @@ export function NewAnalysisDialog({ setJobId }: NewAnalysisDialogProps) {
       <DialogContent className="sm:max-w-md">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>New Analysis</DialogTitle>
+            <DialogTitle>New Analysis Session</DialogTitle>
             <DialogDescription>
-              Each agent runs an independent flow.
+              Provide the details for the new analysis session.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -111,8 +111,8 @@ export function NewAnalysisDialog({ setJobId }: NewAnalysisDialogProps) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="assessment">Assessment & Improvements</SelectItem>
-                    <SelectItem value="monitoring">Performance Monitoring</SelectItem>
-                    <SelectItem value="audit">Audit & Recalibration</SelectItem>
+                    <SelectItem value="monitoring" disabled>Performance Monitoring</SelectItem>
+                    <SelectItem value="audit" disabled>Audit & Recalibration</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

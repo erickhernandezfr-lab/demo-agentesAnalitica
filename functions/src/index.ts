@@ -215,6 +215,3 @@ export const startTagOpsHub = onRequest(async (request, response) => {
     }
   });
 });
-
-
-export * from "./mcpProxy";
