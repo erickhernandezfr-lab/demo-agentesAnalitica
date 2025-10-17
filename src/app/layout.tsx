@@ -34,15 +34,11 @@ export default function RootLayout({
           'min-h-screen w-full bg-background font-body text-foreground antialiased'
         )}
       >
-        <SidebarProvider>
-          <div className="flex">
-            <div className="flex flex-1 flex-col">
-              <main className="flex-1">
+        <div className="flex min-h-screen w-full">
+            <SidebarProvider>
                 {children}
-              </main>
-            </div>
-          </div>
-        </SidebarProvider>
+            </SidebarProvider>
+        </div>
         <Toaster />
       </body>
     </html>

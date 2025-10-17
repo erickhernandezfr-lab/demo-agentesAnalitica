@@ -11,17 +11,10 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
 };
 
-let app;
-let functions;
-let firestore;
-
-if (typeof window !== "undefined") {
-  app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-  functions = getFunctions(app, "us-central1");
-  firestore = getFirestore(app);
-} else {
-  console.warn("Firebase SDK is intended for client-side use and will not be initialized on the server.");
-}
+// Initialize Firebase for SSR
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+const firestore = getFirestore(app);
+const functions = getFunctions(app, 'us-central1');
 
 
-export { app, functions, firestore };
+export { app, firestore, functions };
