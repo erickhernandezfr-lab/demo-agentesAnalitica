@@ -7,8 +7,8 @@ export function AgentGrid() {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <AgentCard
         icon={<Puzzle className="h-8 w-8" />}
-        title="Assessment y Mejoras"
-        description="Evalúa estructura, SEO y UX del sitio."
+        title="Insight Forge"
+        description="Paso 1: Recolección de Datos Estructurales del Sitio Web."
         status="Ready"
         kpi="Last score: N/A"
         ctaText="Iniciar Evaluación"
@@ -16,8 +16,8 @@ export function AgentGrid() {
       />
       <AgentCard
         icon={<LineChart className="h-8 w-8" />}
-        title="Monitoreo de Rendimiento"
-        description="Conecta GA4 y Core Web Vitals para medir performance."
+        title="Analytic Core"
+        description="Paso 2: Análisis por IA y Generación de Estrategia."
         status="Pending"
         kpi="Last check: Never"
         ctaText="Abrir Panel"
@@ -25,8 +25,8 @@ export function AgentGrid() {
       />
       <AgentCard
         icon={<Compass className="h-8 w-8" />}
-        title="Auditoría & Recalibración de Taggeo"
-        description="Cruza datos de los dos anteriores para auditar y corregir tagging."
+        title="TagOps Hub"
+        description="Paso 3: Reporte, Entrega y Guía de Implementación."
         status="Pending"
         kpi="Last audit: Never"
         ctaText="Iniciar Auditoría"

@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
@@ -11,12 +12,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Missing required parameters' }, { status: 400 });
     }
 
-    // The Cloud Function URL should be an environment variable.
-    // Ensure this is set in your Vercel/deployment environment.
-    const functionUrl = process.env.START_INSIGHT_FORGE_URL;
+    // The Cloud Function URL is now a public env var accessible from the client
+    // so the API route is not strictly needed, but it's good practice to keep it
+    // as a proxy that could add future logic (e.g. auth, logging).
+    const functionUrl = process.env.NEXT_PUBLIC_START_INSIGHT_FORGE_URL;
 
     if (!functionUrl) {
-      console.error("START_INSIGHT_FORGE_URL environment variable not set.");
+      console.error("NEXT_PUBLIC_START_INSIGHT_FORGE_URL environment variable not set.");
       return NextResponse.json({ message: 'Server configuration error: Function URL not set.' }, { status: 500 });
     }
 

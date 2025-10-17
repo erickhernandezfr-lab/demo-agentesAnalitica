@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -63,7 +64,7 @@ export default function JobDetailPage() {
             throw new Error(errorData.message || `Failed to start ${stage}`);
         }
 
-        toast({ title: 'Success', description: `${stage} started successfully.` });
+        toast({ title: 'Success', description: `${stage} process started successfully.` });
     } catch (err) {
         const errorMessage = (err instanceof Error) ? err.message : 'An unknown error occurred.';
         toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
@@ -85,8 +86,8 @@ export default function JobDetailPage() {
     return <div className="p-8">Job not found.</div>;
   }
   
-  const showAnalyticCore = job.status === 'insight_forge_completed' || job.status.startsWith('analytic_core') || job.status.startsWith('tagops_hub') || job.status === 'failed';
-  const showTagOpsHub = job.status === 'analytic_core_completed' || job.status.startsWith('tagops_hub');
+  const showAnalyticCore = job.status === 'insight_forge_completed' || job.status.startsWith('analytic_core') || job.status.startsWith('tagops_hub') || job.status === 'failed' || job.status === 'tagops_hub_completed';
+  const showTagOpsHub = job.status === 'analytic_core_completed' || job.status.startsWith('tagops_hub') || job.status === 'tagops_hub_completed';
 
 
   return (
@@ -158,7 +159,7 @@ export default function JobDetailPage() {
                             onChange={(e) => setModifiedMarkdown(e.target.value)}
                             rows={20}
                             className="font-mono"
-                            disabled={job.status.startsWith('tagops_hub')}
+                            disabled={job.status.startsWith('tagops_hub') || job.status === 'tagops_hub_completed'}
                         />
                     </>
                  )}
