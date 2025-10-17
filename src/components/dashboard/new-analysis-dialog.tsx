@@ -122,7 +122,7 @@ export function NewAnalysisDialog() {
                     <SelectValue placeholder="Select Agent" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="insight_forge">Assessment & Improvements</SelectItem>
+                    <SelectItem value="insight_forge">Insight Forge</SelectItem>
                     <SelectItem value="monitoring" disabled>Performance Monitoring</SelectItem>
                     <SelectItem value="audit" disabled>Audit & Recalibration</SelectItem>
                   </SelectContent>
@@ -143,7 +143,7 @@ export function NewAnalysisDialog() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols_4 items-center gap-4">
+            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="pages" className="text-right">
                 Pages
               </Label>
