@@ -11,7 +11,7 @@ import {onRequest} from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import {setGlobalOptions} from "firebase-functions";
 import {v4 as uuidv4} from "uuid";
-import {Firestore, FieldValue} from "@google-cloud/firestore";
+import {FieldValue} from "@google-cloud/firestore";
 import axios from "axios";
 import cors from "cors";
 import puppeteer from "puppeteer";
@@ -33,8 +33,11 @@ export const startInsightForge = onRequest(async (request, response) => {
   corsHandler(request, response, async () => {
     try {
       const {url, pages, device, agentType} = request.body;
+      
+      logger.info(`Received startInsightForge request with agentType: ${agentType}`);
 
       if (!url || !pages || !device || !agentType) {
+        logger.error("Missing required parameters.", { body: request.body });
         response.status(400).send("Missing required parameters.");
         return;
       }
@@ -55,8 +58,6 @@ export const startInsightForge = onRequest(async (request, response) => {
         return;
       }
 
-
-      // Do not await this call
       axios.post(scraperServiceUrl, {
         url,
         pages,
@@ -99,12 +100,10 @@ export const startAnalyticCore = onRequest(async (request, response) => {
                 return;
             }
 
-            // In a real implementation, you would download the content from GCS.
-            // For now, we pass a placeholder to the AI flow.
-            const scrapJsonContent = { placeholder: `Data from ${jsonPath}` }; // Placeholder
+            const scrapJsonContent = { placeholder: `Data from ${jsonPath}` }; 
 
             const reportOutput = await generateTaggingReport({
-                seoReport: { placeholder: "SEO report would be generated here" }, // Placeholder for SEO report
+                seoReport: { placeholder: "SEO report would be generated here" }, 
                 scrapJson: scrapJsonContent,
             });
 

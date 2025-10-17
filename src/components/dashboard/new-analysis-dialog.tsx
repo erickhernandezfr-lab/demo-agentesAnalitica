@@ -1,6 +1,6 @@
 'use client';
 
-import { Dispatch, SetStateAction, useState } from 'react';
+import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -29,11 +29,7 @@ import {
 } from '@/components/ui/radio-group';
 import { useRouter } from 'next/navigation';
 
-interface NewAnalysisDialogProps {
-  // This prop is no longer needed as we'll use the router
-}
-
-export function NewAnalysisDialog({}: NewAnalysisDialogProps) {
+export function NewAnalysisDialog() {
   const { toast } = useToast();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -51,9 +47,21 @@ export function NewAnalysisDialog({}: NewAnalysisDialogProps) {
         device: formData.get('device'),
     };
 
+    const functionUrl = process.env.NEXT_PUBLIC_START_INSIGHT_FORGE_URL;
+
+    if (!functionUrl) {
+      toast({
+        title: 'Error de Configuración',
+        description: 'La URL de la función de inicio no está configurada.',
+        variant: 'destructive',
+      });
+      setLoading(false);
+      return;
+    }
+
+
     try {
-      // The Next.js API route will call the actual Cloud Function
-      const response = await fetch('/api/startAnalysisJob', {
+      const response = await fetch(functionUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -109,12 +117,12 @@ export function NewAnalysisDialog({}: NewAnalysisDialogProps) {
                 Agent
               </Label>
               <div className="col-span-3">
-                <Select name="agentType" defaultValue="assessment">
+                <Select name="agentType" defaultValue="insight_forge">
                   <SelectTrigger>
                     <SelectValue placeholder="Select Agent" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="assessment">Assessment & Improvements</SelectItem>
+                    <SelectItem value="insight_forge">Assessment & Improvements</SelectItem>
                     <SelectItem value="monitoring" disabled>Performance Monitoring</SelectItem>
                     <SelectItem value="audit" disabled>Audit & Recalibration</SelectItem>
                   </SelectContent>
@@ -135,7 +143,7 @@ export function NewAnalysisDialog({}: NewAnalysisDialogProps) {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
+            <div className="grid grid-cols_4 items-center gap-4">
               <Label htmlFor="pages" className="text-right">
                 Pages
               </Label>
