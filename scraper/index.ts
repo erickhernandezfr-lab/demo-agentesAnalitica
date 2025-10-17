@@ -3,9 +3,17 @@ import { chromium } from 'playwright';
 import { Storage } from '@google-cloud/storage';
 import fs from 'fs-extra';
 import path from 'path';
+import * as admin from 'firebase-admin';
 
 const app = express();
 app.use(express.json());
+
+// Initialize Firebase Admin SDK
+admin.initializeApp({
+  credential: admin.credential.applicationDefault(),
+});
+const firestore = admin.firestore();
+
 
 const storage = new Storage();
 
@@ -21,6 +29,9 @@ app.post('/scrape', async (req: Request, res: Response) => {
         console.error('GCS_BUCKET environment variable not set.');
         return res.status(500).send('Server configuration error.');
     }
+
+    // Immediately respond to the client that the job is received.
+    res.status(202).send({ message: `Scraping job ${jobId} received and is processing.` });
 
     try {
         const browser = await chromium.launch();
@@ -104,10 +115,19 @@ app.post('/scrape', async (req: Request, res: Response) => {
         await browser.close();
         await fs.remove(outputDir);
 
-        res.status(200).send({ message: `Scraping job ${jobId} completed successfully.` });
+        // Update Firestore document to indicate successful scraping
+        await firestore.collection('jobs').doc(jobId).update({
+            status: 'scraping_completed',
+        });
+        console.log(`Scraping job ${jobId} completed successfully.`);
+
     } catch (error) {
         console.error(`Error during scraping job ${jobId}:`, error);
-        res.status(500).send(`Scraping job ${jobId} failed.`);
+        // Update Firestore document to indicate failure
+        await firestore.collection('jobs').doc(jobId).update({
+            status: 'failed',
+            error: (error as Error).message || 'An unknown error occurred during scraping.',
+        });
     }
 });
 

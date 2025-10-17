@@ -35,13 +35,19 @@ interface NewAnalysisDialogProps {
 export function NewAnalysisDialog({ setJobId }: NewAnalysisDialogProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
 
     const formData = new FormData(event.currentTarget);
-    const data = Object.fromEntries(formData.entries());
+    const data = {
+        agentType: formData.get('agent'),
+        url: formData.get('url'),
+        pages: formData.get('pages'),
+        device: formData.get('device'),
+    };
 
     try {
       const response = await fetch('/api/startAnalysisJob', {
@@ -53,7 +59,8 @@ export function NewAnalysisDialog({ setJobId }: NewAnalysisDialogProps) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to start analysis job');
+        const errorData = await response.json().catch(() => ({ message: 'Failed to start analysis job' }));
+        throw new Error(errorData.message || 'Failed to start analysis job');
       }
 
       const { jobId } = await response.json();
@@ -61,11 +68,10 @@ export function NewAnalysisDialog({ setJobId }: NewAnalysisDialogProps) {
 
       toast({
         title: 'Success',
-        description: 'Analysis job started successfully',
+        description: 'Analysis job started successfully. You can now track its progress.',
       });
 
-      // Optionally close the dialog
-      // (requires a ref to the close button)
+      setIsDialogOpen(false); // Close the dialog on success
     } catch (error) {
       toast({
         title: 'Error',
@@ -78,7 +84,7 @@ export function NewAnalysisDialog({ setJobId }: NewAnalysisDialogProps) {
   };
 
   return (
-    <Dialog>
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
@@ -99,7 +105,7 @@ export function NewAnalysisDialog({ setJobId }: NewAnalysisDialogProps) {
                 Agent
               </Label>
               <div className="col-span-3">
-                <Select name="agent" defaultValue="assessment">
+                <Select name="agentType" defaultValue="assessment">
                   <SelectTrigger>
                     <SelectValue placeholder="Select Agent" />
                   </SelectTrigger>

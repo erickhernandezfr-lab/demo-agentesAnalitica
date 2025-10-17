@@ -1,20 +1,20 @@
-
 import { useState, useCallback } from 'react';
 import { z } from 'zod';
-import { useToast } from '@/hooks/use-toast'; // Import useToast
+import { useToast } from '@/hooks/use-toast';
 
-// Mock data and types, replace with your actual Firestore data structures
 const formSchema = z.object({
   url: z.string().url(),
   pages: z.coerce.number().min(1).max(10),
   device: z.enum(['desktop', 'mobile']),
 });
 
-type SessionData = {
+type FormValues = z.infer<typeof formSchema>;
+
+export type SessionData = {
   id: string;
   status: 'Running' | 'Completed' | 'Failed';
   tools: {
-    scrapping: 'Running' | 'Completed' | 'Failed';
+    scrapping: 'Running' | 'Completed' | 'Failed' | 'Pending';
     analisis: 'Pending' | 'Running' | 'Completed' | 'Failed';
     guia: 'Pending' | 'Running' | 'Completed' | 'Failed';
     pdf: 'Pending' | 'Running' | 'Completed' | 'Failed';
@@ -31,24 +31,34 @@ export function useMcpSession(agentType: string) {
   const [session, setSession] = useState<SessionData | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast(); // Initialize useToast
+  const { toast } = useToast();
 
   const startSession = useCallback(
-    async (values: z.infer<typeof formSchema>) => {
+    async (values: FormValues) => {
       setIsPending(true);
       setError(null);
-      console.log(`Starting ${agentType} session with values:`, values);
+      
       toast({
-        title: 'Iniciando Sesión',
-        description: 'La sesión de evaluación ha comenzado.',
+        title: 'Iniciando Sesión...',
+        description: `El agente ${agentType} ha comenzado el análisis.`,
       });
 
       try {
-        // MOCKED: Simulate API call to start the session
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        const response = await fetch('/api/startAnalysisJob', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...values, agentType }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ message: 'Failed to start session.' }));
+          throw new Error(errorData.message || 'An unknown error occurred.');
+        }
+
+        const { jobId } = await response.json();
 
         const newSession: SessionData = {
-          id: new Date().toISOString(),
+          id: jobId,
           status: 'Running',
           tools: {
             scrapping: 'Running',
@@ -56,46 +66,20 @@ export function useMcpSession(agentType: string) {
             guia: 'Pending',
             pdf: 'Pending',
           },
-          logs: ['Session started...'],
+          logs: [`Session started with ID: ${jobId}`],
         };
         setSession(newSession);
-        setIsPending(false);
-
-        // MOCKED: Simulate Firestore updates
-        setTimeout(() => {
-          setSession((prev) => prev && { ...prev, tools: { ...prev.tools, scrapping: 'Completed' }, logs: [...prev.logs, 'Scrapping completed.'] });
-        }, 2000);
-
-        setTimeout(() => {
-          setSession((prev) => prev && { ...prev, tools: { ...prev.tools, analisis: 'Running' }, logs: [...prev.logs, 'Analysis running...'] });
-        }, 3000);
-
-        setTimeout(() => {
-          setSession((prev) => prev && {
-            ...prev,
-            status: 'Completed',
-            tools: { ...prev.tools, analisis: 'Completed', guia: 'Completed', pdf: 'Completed' },
-            logs: [...prev.logs, 'Session completed!'],
-            results: {
-              screenshots: ['/placeholder.svg', '/placeholder.svg'],
-              jsonData: { key: 'value', nested: { array: [1,2,3] } },
-              recommendations: ['Improve SEO on page X', 'Optimize image Y'],
-            }
-          });
-          toast({
-            title: 'Sesión Completada',
-            description: 'La evaluación ha finalizado exitosamente.',
-            // Removed: variant: 'success'
-          });
-        }, 5000);
+        
       } catch (err) {
-        setError('Failed to start session.');
-        setIsPending(false);
+        const errorMessage = (err as Error).message;
+        setError(errorMessage);
         toast({
           title: 'Error al Iniciar Sesión',
-          description: 'Hubo un problema al iniciar la evaluación.',
-          variant: 'destructive'
+          description: errorMessage,
+          variant: 'destructive',
         });
+      } finally {
+        setIsPending(false);
       }
     },
     [agentType, toast]
