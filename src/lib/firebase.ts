@@ -1,3 +1,4 @@
+
 import { initializeApp, getApp, getApps, FirebaseApp } from "firebase/app";
 import { getFunctions, connectFunctionsEmulator, Functions } from "firebase/functions";
 import { getFirestore, connectFirestoreEmulator, Firestore } from "firebase/firestore";
@@ -15,6 +16,7 @@ let app: FirebaseApp;
 let firestore: Firestore;
 let functions: Functions;
 
+// This prevents Firebase from being initialized more than once
 if (getApps().length === 0) {
   app = initializeApp(firebaseConfig);
 } else {
@@ -26,8 +28,12 @@ functions = getFunctions(app, 'us-central1');
 
 if (process.env.NODE_ENV === 'development') {
     console.log("Development mode: Connecting to emulators");
-    connectFirestoreEmulator(firestore, 'localhost', 8080);
-    connectFunctionsEmulator(functions, 'localhost', 5001);
+    try {
+        connectFirestoreEmulator(firestore, 'localhost', 8080);
+        connectFunctionsEmulator(functions, 'localhost', 5001);
+    } catch (e) {
+        console.error("Error connecting to emulators. Have you started them with 'firebase emulators:start'?", e);
+    }
 }
 
 export { app, firestore, functions };
