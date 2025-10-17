@@ -1,7 +1,5 @@
 {
   "firestore": {
-    "database": "kmmcpv1",
-    "location": "nam5",
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },

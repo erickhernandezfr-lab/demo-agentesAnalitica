@@ -3,9 +3,10 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Allow read access to jobs only for the user who owns them.
+    // WARNING: For MVP only - allows public read access to jobs.
+    // In a production environment, implement proper authentication and ownership checks.
     match /jobs/{jobId} {
-      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow read: if true;
       allow write: if false; // Keep client-side writes disallowed
     }
 

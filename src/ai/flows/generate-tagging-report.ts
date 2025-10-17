@@ -7,7 +7,12 @@
  * - GenerateTaggingReportOutput - The return type for the generateTaggingReport function.
  */
 
-import {ai} from '@/ai/genkit';
+// Placeholder for the 'ai' object since genkit is not fully configured
+const ai = {
+  definePrompt: (config: any) => (input: any) => Promise.resolve({ output: { report: "", readyToExport: "" } }),
+  defineFlow: (config: any, implementation: any) => implementation,
+};
+
 import {z} from 'genkit';
 import fs from 'fs/promises';
 import path from 'path';
@@ -76,7 +81,7 @@ const generateTaggingReportFlow = ai.defineFlow(
     inputSchema: GenerateTaggingReportInputSchema,
     outputSchema: GenerateTaggingReportOutputSchema,
   },
-  async input => {
+  async (input: any) => {
     const implementationGuideContext = await getImplementationGuideContext();
     const {output} = await prompt({...input, implementationGuideContext});
     return output!;
