@@ -88,7 +88,10 @@ export const startInsightForge = onCall(async (request) => {
     if (error instanceof HttpsError) {
       throw error;
     }
-    throw new HttpsError("internal", "Internal Server Error");
+    const errorMessage = error instanceof Error ?
+      error.message :
+      "Internal Server Error";
+    throw new HttpsError("internal", errorMessage);
   }
 });
 
@@ -150,7 +153,10 @@ export const startAnalyticCore = onCall(async (request) => {
     if (error instanceof HttpsError) {
       throw error;
     }
-    throw new HttpsError("internal", "Internal Server Error");
+    const errorMessage = error instanceof Error ?
+      error.message :
+      "Internal Server Error";
+    throw new HttpsError("internal", errorMessage);
   }
 });
 
@@ -237,6 +243,9 @@ export const startTagOpsHub = onCall(async (request) => {
         `Firestore update failed for job ${jobId} after PDF error:`,
         firestoreError);
     }
-    throw new HttpsError("internal", "Failed to generate PDF.");
+    const errorMessage = error instanceof Error ?
+      error.message :
+      "Failed to generate PDF.";
+    throw new HttpsError("internal", errorMessage);
   }
 });

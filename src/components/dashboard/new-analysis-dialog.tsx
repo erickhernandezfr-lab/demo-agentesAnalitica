@@ -31,23 +31,115 @@ import { useRouter } from 'next/navigation';
 import { functions } from '@/lib/firebase';
 import { httpsCallable, HttpsCallableResult } from 'firebase/functions';
 
+// 1. Hardcoded data for the MOCK flow
+const mockScraperData = [
+  {
+    "url": "https://multiplica.com/",
+    "tipo_pagina": "landing",
+    "ref_grid": { "who": "boxes", "width": 2732, "height": 17570 },
+    "image_size": { "width": 2732, "height": 17570 },
+    "screenshot": "outputs/screens/page_01.png",
+    "coordmap": "outputs/coordmaps/page_01_coordmap.png",
+    "overlay": "outputs/crops/page_01/overlay.png",
+    "componentes": [
+      { "nombre": "hero_banner", "tipo": "hero", "box_json": [0, 0, 1000, 285], "box_px": [0, 0, 1000, 285], "crop": "outputs/crops/page_01/01_hero_banner.png" },
+      { "nombre": "casos_de_exito", "tipo": "section", "box_json": [0, 285, 1000, 539], "box_px": [0, 285, 1000, 539], "crop": "outputs/crops/page_01/02_casos_de_exito.png" },
+      { "nombre": "seccion_descubre", "tipo": "section", "box_json": [0, 539, 1000, 901], "box_px": [0, 539, 1000, 901], "crop": "outputs/crops/page_01/03_seccion_descubre.png" },
+      { "nombre": "nuestros_partners", "tipo": "section", "box_json": [0, 901, 1000, 1157], "box_px": [0, 901, 1000, 1157], "crop": "outputs/crops/page_01/04_nuestros_partners.png" },
+      { "nombre": "como_lo_hacemos", "tipo": "section", "box_json": [0, 1157, 1000, 1345], "box_px": [0, 1157, 1000, 1345], "crop": "outputs/crops/page_01/05_como_lo_hacemos.png" },
+      { "nombre": "nuestros_clientes", "tipo": "section", "box_json": [0, 1345, 1000, 1601], "box_px": [0, 1345, 1000, 1601], "crop": "outputs/crops/page_01/06_nuestros_clientes.png" },
+      { "nombre": "somos_globales", "tipo": "section", "box_json": [0, 1601, 1000, 1857], "box_px": [0, 1601, 1000, 1857], "crop": "outputs/crops/page_01/07_somos_globales.png" },
+      { "nombre": "trabajemos_juntos", "tipo": "section", "box_json": [0, 1857, 1000, 2045], "box_px": [0, 1857, 1000, 2045], "crop": "outputs/crops/page_01/08_trabajemos_juntos.png" },
+      { "nombre": "newsletter", "tipo": "formulario", "box_json": [0, 2045, 1000, 2301], "box_px": [0, 2045, 1000, 2301], "crop": "outputs/crops/page_01/09_newsletter.png" },
+      { "nombre": "footer", "tipo": "footer", "box_json": [0, 2301, 1000, 2489], "box_px": [0, 2301, 1000, 2489], "crop": "outputs/crops/page_01/10_footer.png" },
+      { "nombre": "navbar", "tipo": "navbar", "box_json": [0, 0, 1000, 50], "box_px": [0, 0, 1000, 50], "crop": "outputs/crops/page_01/11_navbar.png" }
+    ]
+  },
+  {
+    "url": "https://multiplica.com/terminos-y-condiciones/",
+    "tipo_pagina": "landing",
+    "ref_grid": { "who": "boxes", "width": 2732, "height": 1950 },
+    "image_size": { "width": 2732, "height": 1950 },
+    "screenshot": "outputs/screens/page_02.png",
+    "coordmap": "outputs/coordmaps/page_02_coordmap.png",
+    "overlay": "outputs/crops/page_02/overlay.png",
+    "componentes": [
+        { "nombre": "logo", "tipo": "logo", "box_json": [25, 26, 155, 48], "box_px": [25, 26, 155, 48], "crop": "outputs/crops/page_02/01_logo.png" },
+        { "nombre": "navbar", "tipo": "navbar", "box_json": [540, 26, 973, 50], "box_px": [540, 26, 973, 50], "crop": "outputs/crops/page_02/02_navbar.png" },
+        { "nombre": "titulo_principal", "tipo": "hero", "box_json": [40, 147, 400, 282], "box_px": [40, 147, 400, 282], "crop": "outputs/crops/page_02/03_titulo_principal.png" },
+        { "nombre": "formulario_newsletter", "tipo": "formulario", "box_json": [540, 147, 973, 622], "box_px": [540, 147, 973, 622], "crop": "outputs/crops/page_02/04_formulario_newsletter.png" }
+    ]
+  },
+  {
+    "url": "https://multiplica.com/configuracion-de-cookies/",
+    "tipo_pagina": "landing",
+    "ref_grid": { "who": "boxes", "width": 2732, "height": 1950 },
+    "image_size": { "width": 2732, "height": 1950 },
+    "screenshot": "outputs/screens/page_03.png",
+    "coordmap": "outputs/coordmaps/page_03_coordmap.png",
+    "overlay": "outputs/crops/page_03/overlay.png",
+    "componentes": [
+        { "nombre": "logo", "tipo": "logo", "box_json": [24, 24, 145, 51], "box_px": [24, 24, 145, 51], "crop": "outputs/crops/page_03/01_logo.png" },
+        { "nombre": "navbar", "tipo": "navbar", "box_json": [547, 25, 971, 51], "box_px": [547, 25, 971, 51], "crop": "outputs/crops/page_03/02_navbar.png" },
+        { "nombre": "boton_hablemos", "tipo": "boton", "box_json": [872, 25, 971, 51], "box_px": [872, 25, 971, 51], "crop": "outputs/crops/page_03/03_boton_hablemos.png" },
+        { "nombre": "titulo_newsletter", "tipo": "hero", "box_json": [40, 160, 302, 292], "box_px": [40, 160, 302, 292], "crop": "outputs/crops/page_03/04_titulo_newsletter.png" }
+    ]
+  }
+];
+const mockAiReport = "Análisis de IA (MOCK): La estructura del sitio web es robusta. Se identificaron 10 componentes clave en la landing page. La arquitectura es apta para la extracción de datos. Los resultados del scraper están listos para la visualización.";
+
+
 export function NewAnalysisDialog() {
   const { toast } = useToast();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleStartSession = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
 
     const formData = new FormData(event.currentTarget);
-    const data = {
-        agentType: formData.get('agentType'),
-        url: formData.get('url'),
-        pages: formData.get('pages'),
-        device: formData.get('device'),
-    };
+    const agentType = formData.get('agentType');
+    const url = formData.get('url');
+    const pages = formData.get('pages');
+    const device = formData.get('device');
+
+    // 2. MOCK FLOW CONDITION
+    if (
+      agentType === 'insight_forge' &&
+      url === 'https://multiplica.com' &&
+      pages === '3' &&
+      device === 'desktop'
+    ) {
+      toast({
+        title: 'Starting MOCK Analysis...',
+        description: 'Simulating scraper execution. Please wait.',
+      });
+
+      // Simulate Scrapping Latency
+      await new Promise(resolve => setTimeout(resolve, 10000));
+
+      // Simulate Job Creation and store data for the next page
+      const mockJobId = 'mock-job-demo';
+      localStorage.setItem('mockScraperData', JSON.stringify(mockScraperData));
+      localStorage.setItem('mockAiReport', mockAiReport);
+      
+      toast({
+        title: 'Scrapping Complete!',
+        description: `Job ID: ${mockJobId}. Redirecting...`,
+      });
+
+      // Redirect to the mock job page
+      setIsDialogOpen(false); 
+      router.push(`/dashboard/jobs/${mockJobId}`);
+      setLoading(false);
+      
+      return; // End execution here for the mock flow
+    }
+
+    // --- Original Flow (if mock conditions are not met) ---
+    const data = { agentType, url, pages, device };
     
     try {
       const startInsightForge = httpsCallable(functions, 'startInsightForge');
@@ -83,7 +175,7 @@ export function NewAnalysisDialog() {
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleStartSession}>
           <DialogHeader>
             <DialogTitle>New Analysis Session</DialogTitle>
             <DialogDescription>
@@ -116,9 +208,10 @@ export function NewAnalysisDialog() {
                 <Input
                   id="url"
                   name="url"
-                  placeholder="https://example.com"
+                  placeholder="https://multiplica.com"
                   required
                   type="url"
+                  defaultValue="https://multiplica.com"
                 />
               </div>
             </div>
@@ -131,7 +224,7 @@ export function NewAnalysisDialog() {
                   id="pages"
                   name="pages"
                   type="number"
-                  defaultValue="1"
+                  defaultValue="3"
                   min="1"
                   max="10"
                   required
